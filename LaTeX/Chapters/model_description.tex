@@ -1,0 +1,193 @@
+
+\label{Chapter2}
+\chapter{Model description}
+
+\section{Exponential smoothing}
+
+\subsection{Model description}
+
+Developed independently by Robert G. Brown and Charles C. Holt in the early 1950s to develop a tracking model for fire-control information and forecasting spare parts, exponential smoothing methods quickly became a useful technique for extrapolating serial data.
+
+In this thesis the notation and taxonomy implemented by \citet{gardner2006exponential}, \citet{hyndman2002state} and \citet{taylor2003exponential} is used. This thesis uses three different models presented below. The following notation is used:
+
+\begin{table}[ht]
+	\renewcommand{\arraystretch}{1.4}
+	\begin{tabular}{ll}
+		Symbol         & Definition \\ \hline \hline
+		$\alpha$       & Smoothing parameter for the level of the series. \\
+		$\gamma$       & Smoothing parameter for the trend.\\
+		$m$            & Number of periods in the forecast.\\
+		$\phi$         & Autoregressive or damping parameter. \\
+		$S_t$          & Smoothed level of the series, computed after $X_t$ is observed. \\
+		$X_t$          & Observed value of the time series in period $t$. \\
+		$T_t$          & Smoothed additive trend at the end of period $t$. \\
+		$\hat{X}_t(m)$ & Forecast for $m$ periods ahead from origin $t$.\\
+		$e_t$          & One-step-ahead forecast error, $e_t = X_t - \hat{X}_{t-1}$.\\
+		& $e_t(m)$ should be used for other forecast origins.
+	\end{tabular}
+\caption[Notation for exponential smoothing]{Notation used to describe exponential smoothing models (same as in \citet{gardner2006exponential})}
+\end{table}
+
+\subsection*{No trend, no seasonality}
+
+This type is the simple exponential smoothing method by \citet{brown1962smoothing}. Following \citet{gardner2006exponential} there will be two separate equations for each model, one using the recursive form and the other being the error correction form.
+
+Given a series $\{X_t\}$ with $t = \{1,\dots,T\}$, the simple exponential smoothing model in recursive form is given by
+
+\begin{equation}
+	\label{ses}
+	\begin{array}{rl}
+		S_{t}&=\alpha X_{t}+(1-\alpha) S_{t-1} \\
+		\hat{X}_{t}(m)&=S_{t}
+	\end{array}
+\end{equation}
+%
+while the error correction form is given by
+
+\begin{equation}
+	\begin{array}{rl}
+		S_{t}&=S_{t-1}+\alpha e_{t} \\
+		\hat{X}_{t}(m)&=S_{t}.
+	\end{array}
+\end{equation}
+
+\subsection*{Additive trend, no seasonality}
+
+The model with additive trend is that of \citet{holt1957forecasting} (Holt's linear method), adding a trend term to the estimated parameter one time step prior in \ref{ses}, resulting in a linear trend. The recursive form is given by
+
+\begin{equation}
+	\label{holt}
+	\begin{array}{rl}
+		S_{t}&=\alpha X_{t}+(1-\alpha)\left(S_{t-1}+T_{t-1}\right) \\
+		T_{t}&=\gamma\left(S_{t}-S_{t-1}\right)+(1-\gamma) T_{t-1} \\
+		\hat{X}_{t}(m)&=S_{t}+m T_{t}
+	\end{array}
+\end{equation}
+%
+and the error correction form by
+
+\begin{equation}
+	\begin{array}{rl}
+		S_{t}&=S_{t-1}+T_{t-1}+\alpha e_{t} \\
+		T_{t}&=T_{t-1}+\alpha \gamma e_{t} \\
+		\hat{X}_{t}(m)&=S_{t}+m T_{t}.
+	\end{array}
+\end{equation}
+
+\subsection*{Damped-additive trend, no seasonality}
+
+In order to allow the trend to decay over time, \citet{gardner1989note} used a dampening factor, reducing the trend influence over the course of the forecast horizon $m$. The recursive form is given by 
+
+\begin{equation}
+	\label{gardner}
+	\begin{array}{rl}
+		S_{t}&=S_{t-1}+\phi T_{t-1}+\alpha e_{t} \\
+		T_{t}&=\phi T_{t-1}+\alpha \gamma e_{t} \\
+		\hat{X}_{t}(m)&=S_{t}+\sum_{i=1}^{m} \phi^{i} T_{t}
+	\end{array}
+\end{equation}
+%
+and the error correction form by
+
+\begin{equation}
+	\begin{array}{rl}
+		S_{t}&=S_{t-1} R_{t-1}+\alpha e_{t} \\
+		R_{t}&=R_{t-1}+\alpha \gamma e_{t} / S_{t-1} \\
+		\hat{X}_{t}(m)&=S_{t} R_{t}^{m}.
+	\end{array}
+\end{equation}
+
+For all above equations it is assumed for $\alpha, \gamma \in [0,1]$ otherwise observations would gain influence the further they are away from the forecast. This becomes evident once we look at the expanded form of \ref{ses}. We substitute the expression of $S_{t-1}$ back into itself and thus arrive at the geometric progression 
+
+\begin{equation*}
+	\begin{aligned}
+		S_{t} &=\alpha X_{t}+(1-\alpha) S_{t-1} \\
+		&=\alpha X_{t}+\alpha(1-\alpha) X_{t-1}+(1-\alpha)^{2} S_{t-2} \\
+		&=\alpha\left[X_{t}+(1-\alpha) X_{t-1}+(1-\alpha)^{2} X_{t-2}+(1-\alpha)^{3} X_{t-3}+\cdots+(1-\alpha)^{t-1} X_{1}\right]+(1-\alpha)^{t} X_{0} .
+	\end{aligned}
+\end{equation*}
+%
+These expressions can be defined analogously for \ref{holt} and \ref{gardner}. For $\phi$, different values can be used to give the trend convex, linear or even concave shape. 
+
+\subsection{Model selection}
+
+Selecting an appropriate model can be done in several different ways, of which a few will be presented here. Depending on the number of time series to forecast either aggregate or individual model selection can be used. \citet{fildes2001beyond} comes to the conclusion that in aggregate selection, the damped-additive trend model is hard to beat, although individual selection does yield better results sometimes. The \enquote{individual selection of exponential smoothing methods, [however], is best described as inconclusive.} \citep[][p. 28]{gardner2006exponential}.
+
+On the one hand there are selection criteria based on time-series characteristics, as described for example in \citet{shah1997model} or \citet{meade2000evidence}, which led to promising results when applied to time series that were generated using one of the processes to identify, but when applied to other series the results were less convincing. On the other hand there are expert-systems that generate rules based on experience made from earlier forecasting procedures (see for example \citet{collopy1992rule} or \citet{flores2000use}). 
+
+The model selection used in this study will be based on information criteria, as they are easy to derive and readily available. The results in selecting the appropriate model, however, are not convincing either. Comparing the studies of \citet{gardner1985forecasting} and \citet{hyndman2002state}, one can find that only for a forecast horizon of two and 15, the AIC as an information criterion selected more accurate models rather than the aggregate choice of a damped-additive trend model. For this reason this study also fits a damped-additive trend model to the data regardless of the decision based on information criteria. Nevertheless does the choice of an information criterion as a model selector provide an easily accessible procedure as this study estimates parameters via state-space maximum likelihood, from which arbitrary information criteria can be derived handily. The choice and description of information criteria used in this study will be discussed in more detail in section SECCCTIONN!!!!!
+
+\subsection{The state-space model}
+
+In order to estimate the parameters for the above described models, this study uses an "innovations", single-source of error (SSOE) state-space model. The model framework is that of \citet{ord1997estimation}, which was expanded by \citet{hyndman2002state}. The basic state space framework can be described by the following equations:
+
+\begin{subequations}
+	\begin{align}
+		y_{t}&=w\left(\boldsymbol{X}_{t-1}\right)+r\left(\boldsymbol{X}_{t-1}\right) \varepsilon_{t} \label{measurement} \\
+		\boldsymbol{x}_{t}&=f\left(\boldsymbol{X}_{t-1}\right)+g\left(\boldsymbol{X}_{t-1}\right) \varepsilon_{t} \label{transition}	
+	\end{align}
+\end{subequations}
+%
+with $y_t$ being the observation at time $t$, $\boldsymbol{X}_t$ the state vector containing unobserved components that describe the level, trend and seasonality of the series and $w,r,f,g$ are continuous functions with $w,r: \mathbb{R}^p \rightarrow \mathbb{R}$ and $f,g: \mathbb{R} \rightarrow \mathbb{R}$. $\{\varepsilon_{t}\}$ is a Gaussian white noise process with variance $\sigma^2$. Equation \ref{measurement} is called the \textit{measurement equation} as it measures the relationship between the unobserved states $\boldsymbol{X}_{t-1}$ and the observation $y_t$. Equation \ref{transition} is called \textit{transition equation}, describing the evolution of the states over time. 
+
+All of the equations from \ref{ses} to \ref{gardner} can be translated into state-space terminology. To ensure that this thesis is self-contained I will present the equations in their state-space equations below, however they are exactly taken from \citet{hyndman2002state}, which discusses them in great detail. The models in this study use additive trends, such that $r(\boldsymbol{X}_{t-1}) = 1$ and if we define the one-step forecast made in period $t-1$ as $\mu_t = F_{(t-1)+1} = w\left(\boldsymbol{X}_{t-1}\right)$. Further defining $e_{t}=r\left(X_{t-1}\right) \varepsilon_{t}$ we can rewrite $Y_t = \mu_t + e_t$ which is equal to $Y_t = \mu_t + \varepsilon_t$ for additive errors. Suppose that $l_t$ is the level of our series at time $t$, $b_t$ is the slope of the series at time $t$ and $\alpha, \gamma, \phi$ are constants, Brown's method from \ref{ses} becomes
+
+\begin{equation}
+	\begin{array}{rl}
+		\mu_{t}&=l_{t-1} \\
+		l_{t}&=l_{t-1}+\alpha \varepsilon_{t}.
+	\end{array}
+\end{equation}
+%
+Holt's linear trend method becomes
+
+\begin{equation}
+	\begin{array}{rl}
+		\mu_{t}&=l_{t-1}+b_{t-1} \\
+		l_{t}&=l_{t-1}+b_{t-1}+\alpha \varepsilon_{t} \\
+		b_{t}&=b_{t-1}+\alpha \gamma \varepsilon_{t},
+	\end{array}
+\end{equation}
+%
+and Gardener's damped additive trend becomes
+
+\begin{equation}
+	\begin{array}{rl}
+		\mu_{t}&=l_{t-1}+b_{t-1} \\
+		l_{t}&=l_{t-1}+b_{t-1}+\alpha \varepsilon_{t} \\
+		b_{t}&=\phi b_{t-1}+\alpha \gamma \varepsilon_{t}.
+	\end{array}
+\end{equation}
+%
+
+\subsection{Parameter estimation and initial values}
+
+As we assumed the error term $\{\varepsilon_t\}$ to be gaussian noise, the likelihood function will also be a gaussian distribution. Here, 
+
+\begin{equation}
+	\mathcal{L}\left(\boldsymbol{\theta}, \boldsymbol{x}_{0}, \sigma^{2} \mid \boldsymbol{y}\right)=\left(2 \pi \sigma^{2}\right)^{-n / 2}\left|\prod_{t=1}^{n} r\left(\boldsymbol{x}_{t-1}\right)\right|^{-1} \exp \left(-\frac{1}{2} \sum_{t=1}^{n} \varepsilon_{t}^{2} / \sigma^{2}\right)
+\end{equation}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

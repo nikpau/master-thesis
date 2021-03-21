@@ -1,0 +1,15 @@
+[0] Config.pm:312> INFO - This is Biber 2.15
+[0] Config.pm:315> INFO - Logfile is 'exposÃ©.blg'
+[49] biber:330> INFO - === Wed Jan 13, 2021, 14:34:07
+[116] Biber.pm:415> INFO - Reading './exposé.bcf'
+[161] Biber.pm:952> INFO - Found 10 citekeys in bib section 0
+[171] Biber.pm:4334> INFO - Processing section 0
+[178] Biber.pm:4523> INFO - Looking for bibtex format file 'literature.bib' for section 0
+[179] bibtex.pm:1682> INFO - LaTeX decoding ...
+[185] bibtex.pm:1494> INFO - Found BibTeX data source 'literature.bib'
+[233] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[234] UCollate.pm:68> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[234] Biber.pm:4162> INFO - Sorting list 'nyt/global//global/global' of type 'entry' with template 'nyt' and locale 'en-US'
+[234] Biber.pm:4168> INFO - No sort tailoring available for locale 'en-US'
+[241] bbl.pm:651> INFO - Writing 'exposÃ©.bbl' with encoding 'UTF-8'
+[245] bbl.pm:754> INFO - Output to exposÃ©.bbl
