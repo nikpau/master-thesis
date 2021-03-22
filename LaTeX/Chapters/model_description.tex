@@ -2,6 +2,10 @@
 \label{Chapter2}
 \chapter{Model description}
 
+%-------------------------------------------------------------------------------
+%----EXPONENTIAL SMOOTHING------------------------------------------------------
+%-------------------------------------------------------------------------------
+
 \section{Exponential smoothing}
 
 \subsection{Model description}
@@ -103,7 +107,7 @@ For all above equations it is assumed for $\alpha, \gamma \in [0,1]$ otherwise o
 	\begin{aligned}
 		S_{t} &=\alpha X_{t}+(1-\alpha) S_{t-1} \\
 		&=\alpha X_{t}+\alpha(1-\alpha) X_{t-1}+(1-\alpha)^{2} S_{t-2} \\
-		&=\alpha\left[X_{t}+(1-\alpha) X_{t-1}+(1-\alpha)^{2} X_{t-2}+(1-\alpha)^{3} X_{t-3}+\cdots+(1-\alpha)^{t-1} X_{1}\right]+(1-\alpha)^{t} X_{0} .
+		&=\alpha\left[X_{t}+(1-\alpha) X_{t-1}+(1-\alpha)^{2} X_{t-2}+\cdots+(1-\alpha)^{t-1} X_{1}\right]+(1-\alpha)^{t} X_{0} .
 	\end{aligned}
 \end{equation*}
 %
@@ -208,7 +212,32 @@ To arrive at maximum likelihood estimates for the parameters this study minimize
 
 One last step prior to fitting the model, the initial values for $\boldsymbol{X}_0$ must be set. Here we use $\alpha = \gamma = 0.5$ and $\phi = 0.9$, while for the level $l_0$ of the series we compute a linear trend of the first ten observations and use the intercept as a starting value. For the initial trend  coefficient $b_0$ we use the slope of the before computed trend.
 
+%-------------------------------------------------------------------------------
+%----ARIMA(p,d,q)------------------------------------------------------
+%-------------------------------------------------------------------------------
 
+\section{Autoregressive integrated moving average (ARIMA)}
+
+\subsection{The linear filter}
+
+The basic framework for the stochastic models presented here, are based on an idea of \citet{yule1927vii} that an observable time series $y_t$ in which past successive values are dependent on each other can be seen as a series of independent shocks $\varepsilon_t$. These shocks can be modeled as random draws from a fixed distribution with mean $\mu = 0$ and time independent variance $\sigma^2_\varepsilon$. In most cases $\varepsilon_t \sim \mathcal{N} \left(0, \sigma^2_\varepsilon \right) $. The thus generated sequence of random values $\varepsilon_t, \varepsilon_{t-1}, \varepsilon_{t-2} \dots$, is called a white noise process.
+
+The process that transforms $\varepsilon_t$ into $y_t$ is then called a \textit{linear filter}, that takes in a weighted sum of previous shocks, such that
+
+\begin{equation}
+	\begin{aligned}
+		z_{t} &=\mu+\varepsilon_{t}+\zeta_{1} \varepsilon_{t-1}+\zeta_{2} \varepsilon_{t-2}+ \dots \\
+		&=\mu+\zeta(\boldsymbol{B}) \varepsilon_{t}.
+	\end{aligned}
+\end{equation}
+%
+The second line of the above equation makes use of the \textit{backwards shift operator}, which is is defined by $\boldsymbol{B} y_t = y_{t-1}$ and therefore $\boldsymbol{B}^m y_t = y_{t-m}$, and is called the \textit{transfer function}, defined as
+
+\begin{equation*}
+	\zeta(\boldsymbol{B})=1+\zeta_{1} \boldsymbol{B} + \zeta_{2} \boldsymbol{B}^{2}+\dots
+\end{equation*}
+%
+The sequence of weights $\{\zeta_j\}$ can have arbitrary lengths and determines the processes' stationarity. If the weights are absolutely summable, i.e. $\sum_{j=0}^{\infty}\left|\zeta_{j}\right|<\infty$, the filter is called stable and the underlying process is stationary. Now, $\mu$ is the mean about which the process varies; otherwise $\mu$ has no specific interpretation, besides giving information about the process level.
 
 
 
