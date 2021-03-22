@@ -7,7 +7,7 @@ The models are configured to provide a seven-day-ahead forecast which will be co
 
 ## Usage
 
-All the relevant parts for this thesis can be accessed via the `main.R` script file. The comments inside will guide you through my work. 
+All the relevant parts for this thesis can be accessed via the `/R/main.R` script file. The comments inside will guide you through my work. 
 
-It is encouraged to use _R-Studio_, however all other editors work just fine. Please make sure to download the project in its entirety as the relative pathing won't work otherwise
+It is encouraged to use _R-Studio_, however all other editors work just fine. Please make sure to download the project in its entirety as the relative pathing won't work otherwise and thus the helper functions cannot be loaded.
  
