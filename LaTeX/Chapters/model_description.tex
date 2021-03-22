@@ -162,13 +162,51 @@ and Gardener's damped additive trend becomes
 
 \subsection{Parameter estimation and initial values}
 
-As we assumed the error term $\{\varepsilon_t\}$ to be gaussian noise, the likelihood function will also be a gaussian distribution. Here, 
+As we assumed the error term $\{\varepsilon_t\}$ to be Gaussian noise, the likelihood function will also be a Gaussian likelihood. In essence, the joint
+density of the series is the weighted product of the densities of the individual innovations:
 
 \begin{equation}
-	\mathcal{L}\left(\boldsymbol{\theta}, \boldsymbol{x}_{0}, \sigma^{2} \mid \boldsymbol{y}\right)=\left(2 \pi \sigma^{2}\right)^{-n / 2}\left|\prod_{t=1}^{n} r\left(\boldsymbol{x}_{t-1}\right)\right|^{-1} \exp \left(-\frac{1}{2} \sum_{t=1}^{n} \varepsilon_{t}^{2} / \sigma^{2}\right)
+	p\left(\boldsymbol{y} \mid \boldsymbol{\theta}, \boldsymbol{X}_{0}, \sigma^{2}\right)=\prod_{t=1}^{n} p\left(\varepsilon_{t}\right) /\left|r\left(\boldsymbol{X}_{t-1}\right)\right|,
 \end{equation}
+%
+with $\boldsymbol{X}_0$ being the seed states or initial values. This given, the Gaussian likelihood can be described as
 
+\begin{equation}
+\label{expsm-likeli}
+	\mathcal{L}\left(\boldsymbol{\theta}, \boldsymbol{X}_{0}, \sigma^{2} \mid \boldsymbol{y}\right)=\left(2 \pi \sigma^{2}\right)^{-n / 2}\left|\prod_{t=1}^{n} r\left(\boldsymbol{X}_{t-1}\right)\right|^{-1} \exp \left(-\frac{1}{2} \sum_{t=1}^{n} \varepsilon_{t}^{2} / \sigma^{2}\right),
+\end{equation}
+%
+and the log likelihood is given as 
 
+\begin{equation}
+	\log \mathcal{L}=-\frac{n}{2} \log \left(2 \pi \sigma^{2}\right)-\sum_{t=1}^{n} \log \left|r\left(\boldsymbol{X}_{t-1}\right)\right|-\frac{1}{2} \sum_{t=1}^{n} \varepsilon_{t}^{2} / \sigma^{2}.
+\end{equation}
+%
+If we now set the partial derivative with respect to $\sigma^2$ to zero, we can calculate the maximum likelihood estimate of the variance as
+
+\begin{equation}
+	\hat{\sigma}^{2}=n^{-1} \sum_{t=1}^{n} \varepsilon_{t}^{2}.
+\end{equation}
+%
+This allows us to write the likelihood from \ref{expsm-likeli} without dependency from the variance as 
+
+\begin{equation}
+	\mathcal{L}\left(\boldsymbol{\theta}, \boldsymbol{X}_{0} \mid \boldsymbol{y}\right)=\left(2 \pi  \hat{\sigma}^{2}\right)^{-n / 2}\left|\prod_{t=1}^{n} r\left(\boldsymbol{x}_{t-1}\right)\right|^{-1}.
+\end{equation}
+%
+Recapitulating from above we know that for additive models $r(\boldsymbol{X}_{t-1}) = 1$, and thus by taking the twice the negative logarithm we arrive at
+
+\begin{equation}
+	\label{max-llik}
+	\begin{array}{rl}
+	\mathcal{L}^{*}\left(\boldsymbol{\theta}, \boldsymbol{X}_{0}\right)&= n \log \left(2 \pi \right) + n \log \left( \hat{\sigma}^2	 \right) \\
+	&= n \log \left(2 \pi \right) + n \log \left( \displaystyle \sum_{t=1}^{n} \varepsilon_{t}^{2}\right).
+	\end{array}
+\end{equation}
+%
+To arrive at maximum likelihood estimates for the parameters this study minimizes \ref{max-llik}.
+
+One last step prior to fitting the model, the initial values for $\boldsymbol{X}_0$ must be set. Here we use $\alpha = \gamma = 0.5$ and $\phi = 0.9$, while for the level $l_0$ of the series we compute a linear trend of the first ten observations and use the intercept as a starting value. For the initial trend  coefficient $b_0$ we use the slope of the before computed trend.
 
 
 
