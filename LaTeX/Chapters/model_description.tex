@@ -1,7 +1,5 @@
-
-\label{Chapter2}
 \chapter{Model description}
-
+\label{Chapter2}
 %-------------------------------------------------------------------------------
 %----EXPONENTIAL SMOOTHING------------------------------------------------------
 %-------------------------------------------------------------------------------
@@ -213,7 +211,7 @@ To arrive at maximum likelihood estimates for the parameters this study minimize
 One last step prior to fitting the model, the initial values for $\boldsymbol{X}_0$ must be set. Here we use $\alpha = \gamma = 0.5$ and $\phi = 0.9$, while for the level $l_0$ of the series we compute a linear trend of the first ten observations and use the intercept as a starting value. For the initial trend  coefficient $b_0$ we use the slope of the before computed trend.
 
 %-------------------------------------------------------------------------------
-%----ARIMA(p,d,q)------------------------------------------------------
+%----ARIMA(p,d,q)---------------------------------------------------------------
 %-------------------------------------------------------------------------------
 
 \section{Autoregressive integrated moving average (ARIMA)}
@@ -225,6 +223,7 @@ The basic framework for the stochastic models presented here, are based on an id
 The process that transforms $\varepsilon_t$ into $y_t$ is then called a \textit{linear filter}, that takes in a weighted sum of previous shocks, such that
 
 \begin{equation}
+        \label{linear-filter}
 	\begin{aligned}
 		z_{t} &=\mu+\varepsilon_{t}+\zeta_{1} \varepsilon_{t-1}+\zeta_{2} \varepsilon_{t-2}+ \dots \\
 		&=\mu+\zeta(\boldsymbol{B}) \varepsilon_{t}.
@@ -237,10 +236,37 @@ The second line of the above equation makes use of the \textit{backwards shift o
 	\zeta(\boldsymbol{B})=1+\zeta_{1} \boldsymbol{B} + \zeta_{2} \boldsymbol{B}^{2}+\dots
 \end{equation*}
 %
-The sequence of weights $\{\zeta_j\}$ can have arbitrary lengths and determines the processes' stationarity. If the weights are absolutely summable, i.e. $\sum_{j=0}^{\infty}\left|\zeta_{j}\right|<\infty$, the filter is called stable and the underlying process is stationary. Now, $\mu$ is the mean about which the process varies; otherwise $\mu$ has no specific interpretation, besides giving information about the process level.
+The sequence of weights $\{\zeta_j\}$ can have arbitrary lengths and determines the processes' stationarity. If the weights are absolutely summable, i.e. $\sum_{j=0}^{\infty}\left|\zeta_{j}\right|<\infty$, the filter is called stable and the underlying process is stationary. Then, $\mu$ is the mean about which the process varies; otherwise $\mu$ has no specific interpretation, besides giving information about the process level.
 
+\subsection{The autoregressive model}
 
+The idea behind the autoregressive model is that the current value of a series can be expressed as the result of regressing past values of the series plus a random shock onto the current one, hence the name \textit{autoregressive}. For the mathematical description we will stick with the above notation: Let $y_t, y_{t-1}, y_{t-2},\dots$ be a series with equidistant time steps and further let $\tilde{y}_t = y_t - \mu$ be the series deviation from its level or mean. Now, 
 
+\begin{equation}
+        \tilde{y}_{t}=\phi_{1} \tilde{y}_{t-1}+\phi_{2} \tilde{y}_{t-2}+\dots+\phi_{p} \tilde{y}_{t-p}+\varepsilon_{t}
+\end{equation}
+%
+is an autoregressive process of order p (AR(p)). We can also make use of the backwards shift operator to define the transfer function of the process as 
+
+\begin{equation}
+        \phi(\boldsymbol{B})=1-\phi_{1} \boldsymbol{B}-\phi_{2} \boldsymbol{B}^{2}-\dots-\phi_{p} \boldsymbol{B}^{p}
+\end{equation}
+%
+to arrive at the economical description of the process as
+
+\begin{equation}
+        \phi(\boldsymbol{B})\tilde{y_t} = \varepsilon_t.
+\end{equation}
+%
+The number of estimated parameters of the model is $p + 2$, i.e. $\mu_y, \sigma^2_\varepsilon \mathrm{and} \phi_j$ with $j = 1,\dots, p$. An AR(p) process can be either stationary or non-stationary depending on the unit roots of its characteristic polynomial $\phi(\boldsymbol{B})$. If the absolute value of all roots $\phi(\boldsymbol{B}) = 0$ lie outside the unit circle, the process is stationary. 
+
+\subsection{The moving average model}
+
+As we have seen above, the autoregressive model regresses past terms of the series plus a random shock onto the current value. The same idea is adapted for the moving average model with the change that now the current value is regessed onto a linear combination of past shocks. The model can be described as 
+
+\begin{equation}
+        \tilde{y}_{t}=\varepsilon_{t}-\theta_{1} \varepsilon_{t-1}-\theta_{2} \varepsilon_{t-2}-\dots-\theta_{q} \varepsilon_{t-q}
+\end{equation}
 
 
 
