@@ -258,21 +258,115 @@ to arrive at the economical description of the process as
         \phi(\boldsymbol{B})\tilde{y_t} = \varepsilon_t.
 \end{equation}
 %
-The number of estimated parameters of the model is $p + 2$, i.e. $\mu_y, \sigma^2_\varepsilon \mathrm{and} \phi_j$ with $j = 1,\dots, p$. An AR(p) process can be either stationary or non-stationary depending on the unit roots of its characteristic polynomial $\phi(\boldsymbol{B})$. If the absolute value of all roots $\phi(\boldsymbol{B}) = 0$ lie outside the unit circle, the process is stationary. 
+The number of estimated parameters of the model is $p + 2$, i.e. $\mu_y, \sigma^2_\varepsilon \mathrm{and } \phi_j$ with $j = 1,\dots, p$. An AR(p) process can be either stationary or non-stationary depending on the unit roots of its characteristic polynomial $\phi(\boldsymbol{B})$. If the absolute value of all roots $\phi(\boldsymbol{B}) = 0$ lie outside the unit circle, the process is stationary. 
 
 \subsection{The moving average model}
 
 As we have seen above, the autoregressive model regresses past terms of the series plus a random shock onto the current value. The same idea is adapted for the moving average model with the change that now the current value is regessed onto a linear combination of past shocks. The model can be described as 
 
 \begin{equation}
-        \tilde{y}_{t}=\varepsilon_{t}-\theta_{1} \varepsilon_{t-1}-\theta_{2} \varepsilon_{t-2}-\dots-\theta_{q} \varepsilon_{t-q}
+        \tilde{y}_{t}=\varepsilon_{t}-\theta_{1} \varepsilon_{t-1}-\theta_{2} \varepsilon_{t-2}-\dots-\theta_{q} \varepsilon_{t-q},
+\end{equation}
+%
+which is called a \textit{moving average process} of order q (MA(q)). Again using the backwards shift operator we are able to define the moving average operator as
+
+\begin{equation*}
+        \theta(\boldsymbol{B})=1-\theta_{1} \boldsymbol{B}-\theta_{2} \boldsymbol{B}^{2}-\cdots-\theta_{q} \boldsymbol{B}^{q},
+\end{equation*}
+%
+which enables us to economically write the model as
+
+\begin{equation}
+        \tilde{y}_t = \theta (\boldsymbol{B})\varepsilon_t.
+\end{equation}
+%
+The number of parameters to be estimated is again $q+2$ following the same logic as above.
+
+\subsection{Autoregressive moving average models}
+
+Both of the above models can also be combined in order to achieve greater flexibility when modeling time series. The resulting model is called \textit{autoregressive moving average}, or ARMA and is defined by 
+
+\begin{equation}
+        \tilde{y}_{t}=\phi_{1} \tilde{z}_{t-1}+\dots+\phi_{p} \tilde{z}_{t-p}+\varepsilon_{t}-\theta_{1} \varepsilon_{t-1}-\dots-\theta_{q} \varepsilon_{t-q}.
+\end{equation}
+%
+For easier identification the model order is usually written in parantheses after the model name, like ARMA(p,q). For a more economical writing stlye, often either the summation notation
+
+\begin{equation}
+        \tilde{y}_{t}=\varepsilon_{t}+\sum_{i=1}^{p} \phi_{i} y_{t-i}+\sum_{j=1}^{q} \theta_{j} \varepsilon_{t-j}
+\end{equation}
+%
+or the operator notation
+
+\begin{equation}
+        \phi(\boldsymbol{B}) \tilde{y}_{t}=\theta(\boldsymbol{B}) \varepsilon_{t}
+\end{equation}
+%
+is used. The combined model now has $p+q+2$ parameters that need to be estimated from the data. 
+
+\subsection{Achieving stationarity}
+
+The majority of time series encounterd in the real world are not stationary, meaning they do not fluctuate around a fixed mean but much rather exibit seasonal or global trends. However, it is possible for those series to still exhibit homogeneous behavior over time when we somehow account for those changes in level. Mathematically non-stationarity occurs if one ore more roots of the processes' characteristc polynomial lie exactly on the unit circle while all others lie outside. Following \citet{box1976time}, if such a process has exactly $d$ roots on the unit circle, we can use the augmented autoregressive operator $\varphi(B)=\phi(B)(1-B)^{d}$ to transform the model back to stationarity via
+
+\begin{equation}
+        \varphi(\boldsymbol{B}) y_{t}=\phi(\boldsymbol{B})(1-\boldsymbol{B})^{d} y_{t}=\theta(\boldsymbol{B}) \varepsilon_{t}.
+\end{equation}
+%
+So, a model that exhibits non-stationary, but homogeneous behavior can be brought back to stationarity by using the $d$-th differnece instead. We can now define some $b_{t}=(1-\boldsymbol{B})^{d} y_{t}$ to arrive at the well known ARIMA(p,d,q) model defined by 
+
+\begin{equation}
+        b_{t}=\phi_{1} b_{t-1}+\dots \phi_{p} b_{t-p}+\varepsilon_{t}-\theta_{1} \varepsilon_{t-1}-\dots-\theta_{q} \varepsilon_{t-q}
+\end{equation}
+%
+or in summation notation
+
+\begin{equation}
+        w_{t}=\mu+\varepsilon_{t}+\sum_{i=1}^{p} \phi_{i} y_{t-i}+\sum_{j=1}^{q} \theta_{j} \varepsilon_{t-j}.
 \end{equation}
 
+\subsection{Model identification and selection}
 
+The process of identification and selection can take place in two different manners. First, one can follow the \textit{Box Jenkins approach}, that is inspecting the autocorrelation and partial autocorrelation functions to determine the order of the underlying process and second a grid-search algorithm in combination with some information criterion can be used to search though the models' parameter space to choose the model that minimizes the criterion
 
+\subsection*{Autocovariance and Autocorrelation function}
 
+Once a process is stationary by means of the definition above, it features some important stochastic stabilities especially time invariant properties. In particular this means that its properties, such as the joint probability, mean or variance are unaffected by a change of time origin. Suppose a stationary stochastic process $\{y_t\}$ is observed for some period of time $y_{t_1}, y_{t_2},\dots,y_{t_m}$, then under stationarity conditions all describing moments and the joint probability remain equal if the series gets shiftet by some arbitrary integer $s$, say $y_{t_1+s}, y_{t_2+s},\dots,y_{t_m+s}$.
 
+The time-invariant mean of a (continuous) stationarity process with a joint probability function $p(\cdot)$ is given by
 
+\begin{equation}
+        \mu=E\left[y_{t}\right]=\int_{-\infty}^{\infty} y p(y) d y
+\end{equation}
+%
+and its variance by
+
+\begin{equation}
+        \sigma_{y}^{2}=E\left[\left(y_{t}-\mu\right)^{2}\right]=\int_{-\infty}^{\infty}(y-\mu)^{2} p(y) d y.
+\end{equation}
+%
+As in real-world applications the series are always of finite length, the mean and variance must be estimated from the data. For a series with $N$ observations the mean is estimated by
+
+\begin{equation}
+        \bar{y}=\frac{1}{N} \sum_{t=1}^{N} y_{t}
+\end{equation}
+%
+and the variance via
+
+\begin{equation}
+        \hat{\sigma}_{y}^{2}=\frac{1}{N} \sum_{t=1}^{N}\left(y_{t}-\bar{y}\right)^{2}.
+\end{equation}
+%
+The stationarity from above implies that the joint probability distribution is the same for all times that are a constant value apart. It follows herefrom that also the covariance between two values $y_t$ and $y_{t+k}$ must be the same for every $t$. The separation integer $k$ is also called the \textit{lag value}, and therefore defines the autocovariance function at lag $k$ as
+
+\begin{equation}
+        \gamma_{k}=\operatorname{cov}\left[y_{t}, y_{t+k}\right]=E\left[\left(y_{t}-\mu\right)\left(y_{t+k}-\mu\right)\right].
+\end{equation}
+%
+Equivalently, the autocorrelation function is defined as
+
+\begin{equation}
+        \rho_{k}=\frac{E\left[\left(y_{t}-\mu\right)\left(y_{t+k}-\mu\right)\right]}{\sqrt{E\left[\left(y_{t}-\mu\right)^{2}\right] E\left[\left(y_{t+k}-\mu\right)^{2}\right]}}
+\end{equation}
 
 
 
