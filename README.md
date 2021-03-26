@@ -1,4 +1,4 @@
-# Forecasting univariate stock indices with parametric models and neural networks: A comparison
+# Forecasting univariate stock indices with parametric models and neural networks: A comparison (WIP)
 This is the GitHub project for my master thesis. In here you find the relevant code and the writing itself. 
 
 The aim of this thesis is to survey the accuracy and practicability of different univariate forecasting methods for different stock indices around the world. The methods used in this study are split into two groups based on their inner workings. The first group encompasses models with a well-established statistical foundation i.e. exponential state-space and ARIMA(p,d,q) models, while the latter focuses on artificial neural networks (ANNs) which can be considered nonparametric as they do not need statistical assumptions before estimation but rather derive a structure directly from the underlying data.
