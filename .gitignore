@@ -3,6 +3,8 @@ code_meadow/
 _literature/
 R/_objects/GARCH/
 exposé/
+Blueprint
+LaTeX/
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
