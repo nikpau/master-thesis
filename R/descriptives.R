@@ -1,12 +1,12 @@
 ########################### RAW PLOTTING #############################
 # Plot function for the raw series and the differenced series 
 # for visual inspection.
-plot_Raw_Series <- function(differencing = F){
+plot_Raw_Series <- function(differencing = F ){
 
         ts <- date_ts
         ts_diff <- diff_list
 
-        for(entry in 1:length(ts_diff)){
+        for (entry in seq_len(length(ts_diff))) {
                 print(noquote(paste0("Plotting series ", names_complete[entry])))
                 if(differencing == F){
                         pdf(paste0("./img/raw_series/undifferenced/",
@@ -36,7 +36,23 @@ plot_Raw_Series <- function(differencing = F){
         }
 
 }
-#plot_Raw_Series()
+
+# Create Boxplots for the time series
+make_Boxplot <- function(list) {
+
+        for (i in seq_len(length(list))) {
+
+                pdf(file = paste0("./img/raw_series/boxplots/",
+                                  names_complete[i],
+                                  "_boxPlot.pdf"), width = 4)
+                boxplot(list[[i]], main = paste0("Boxplot for ", names_complete[i]),
+                        xlab = NULL, range = 2)
+                abline(h = 0)
+                dev.off()
+
+        }
+
+}
 
 # Create autocorrelation function plots for each time series and save them into the /img folder
 save_ACF <- function(list,n.lag = 30, type = "acf") {

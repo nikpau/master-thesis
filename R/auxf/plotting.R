@@ -1,5 +1,5 @@
 # Plot and save function for forecast classes
-plot_save_forecast <- function(forecast, test, window, path) {
+plot_save_forecast <- function(forecast, testset, window, path) {
   
   
   for (i in seq_len(length(forecast))){
@@ -8,7 +8,7 @@ plot_save_forecast <- function(forecast, test, window, path) {
     
     series <- tail(forecast[[i]]$x, window)
     forc <- forecast[[i]]$mean
-    test <- test[[i]]
+    test <- testset[[i]]
     test <- ts(test, start = length(forecast[[i]]$x)+1, 
                end = length(forecast[[i]]$x) + length(test))
     trans_true <- ts(c(tail(series,1), head(test,1)), 
@@ -19,12 +19,11 @@ plot_save_forecast <- function(forecast, test, window, path) {
                      end = head(index(forc),1))
     ui <- forecast[[i]]$upper[,2]
     li <- forecast[[i]]$lower[,2]
-    miny <- function() {if(min(series) < min(test)) min(series) else min(test)}
-    maxy <- function() {if(max(series) > max(test)) max(series) else max(test)}
     
     pdf(file = paste0(path, "/", names_complete[i],"_exp_sm.pdf"), 
         height = 5,
         family = "Times")
+    # Plot series
     
     plot(
       series, 
@@ -32,16 +31,15 @@ plot_save_forecast <- function(forecast, test, window, path) {
       lwd = 2,
       xlab = "Index",
       ylab = "Series",
-      ylim = c(floor(miny()), ceiling(maxy())),
+      ylim = c(floor(miny(series,test)), ceiling(maxy(series,test))),
       xlim = c(length(forecast[[i]]$x) - window, 
                length(forecast[[i]]$x) + length(test)),
       main = paste0(names_complete[i], " ", length(test), " days ahead")
     )
     abline(v = length(forecast[[i]]$x))
-    lines(forc, type = "l", lwd = 2, col = "blue2")
-    lines(trans_forc, type = "l", lty = 2, lwd = 2, col = "blue2")
-    lines(test, type = "l", lwd = 2, col = "green4")
-    lines(trans_true, type = "l", lty = 2, lwd = 2, col = "green4")
+    
+    add_lines(forc, trans_forc, test, trans_true)
+    
     #CI
     lines(ui, type = "b", col = "red4")
     lines(li, type = "b", col = "red4")
@@ -50,4 +48,27 @@ plot_save_forecast <- function(forecast, test, window, path) {
   }
   cat("Done \n")
   
+}
+# Find minimum y value of test set and series
+miny <- function(series, test) {
+  if (min(series) < min(test))
+    min(series)
+  else
+    min(test)
+}
+
+# Find minimum y value of test set and series
+maxy <- function(series, test) {
+  if (max(series) > max(test))
+    max(series)
+  else
+    max(test)
+}
+
+# Add forecasted values as lines to the plot
+add_lines <- function(forc, trans_forc, true, trans_true) {
+  lines(forc, type = "l", lwd = 2, col = "blue2")
+  lines(trans_forc, type = "l", lty = 2, lwd = 2, col = "blue2")
+  lines(true, type = "l", lwd = 2, col = "green4")
+  lines(trans_true, type = "l", lty = 2, lwd = 2, col = "green4")
 }

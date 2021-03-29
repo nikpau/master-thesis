@@ -79,39 +79,6 @@ get_orders_from_arima_fit <- function(arimaFITorList) {
         return(resdf)
 }
 
-############### BOOTSTRAPPING #################################
-
-# Source the bootstrapping procedure after Pascual et al. (2004)
-source("./bootstrap.R", 
-       echo = F)
-
-arima.residuals <- mclapply(auto.arima.list, FUN = residuals)
-
-# Generate 1000 bootstrap repetition for each series
-
-bootstrap_list <- list()
-
-for(i in 1:length(auto.arima.list)){
-
-        # Print current state.
-        print(noquote(paste0("Bootstrapping ",names_complete[i])))
-
-        bootstrap_list[[i]] <- make_bootsrapped_series_from_arima(arima_residuals = arima.residuals[[i]], 
-                                                                  series = auto.arima.list[[i]][["x"]],
-                                                                  coefs = coef(auto.arima.list[[i]]),
-                                                                  order = c(auto.arima.list[[i]]$arma[1],
-                                                                            auto.arima.list[[i]]$arma[2]),
-                                                                  n = 1000, # 1000 bootstrapped series are re-sampled
-                                                                  out.sample = out.sample,
-                                                                  parallel = T)
-
-}
-# Name the list with the bootstrapped series
-names(bootstrap_list) <- names_complete
-
-# Forecast the bootstrapped series, with parallel support. Computationally demanding. 
-boot.forecast <- lapply(bootstrap_list,Boots_Predict, parallel = T, n.ahead = out.sample)
-
 ########## ERROR METRICS #############################
 
 # Get Error metrics for forecast values.
@@ -127,24 +94,19 @@ error_metrics_arima <- function(forecasts, testsets, trainsets) {
                 MASE_scaling_factor <- MASE_scaling_factor(train)
                 
                 #MASE
-                sum_abs_err <- sum(abs(test - forc))
-                mase <- (sum_abs_err / length(test)) / MASE_scaling_factor
-                resdf[entry, 2] <- mase
+                resdf[entry, 2] <- calculate_mase(test, train, forc, MASE_scaling_factor)
                 
                 #RMSSE
-                sum_err <- sum(test - forc)
-                rmsse <- sqrt(((sum_err / length(test)) / MASE_scaling_factor)^2)
-                resdf[entry, 1] <- rmsse
+                resdf[entry, 1] <- calculate_rmsse(test, train, forc, MASE_scaling_factor)
                 
                 #MdASE
-                med_abs_err <- median(abs(test - forc))
-                mdase <- med_abs_err / MASE_scaling_factor
-                resdf[entry, 3] <- mdase
+                resdf[entry, 3] <- calculate_mdase(test, train, forc, MASE_scaling_factor)
         }
         names(resdf) <- c("MASE", "RMSSE", "MdASE")
         return(resdf)
 }
 
+# Save QQ-Normal plots for the residuals of the arima fits
 save_resid_qq <- function(autoARIMAList) {
 
         if (class(autoARIMAList) != "autoArimaList")

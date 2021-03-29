@@ -9,6 +9,27 @@ MASE_scaling_factor <- function(training.data) {
         return(scaling.factor)
 }
 
+# Calculate the Mean absolute scaled error
+calculate_mase <- function(test, train, forc, scaling_factor) {
+        sum_abs_err <- sum(abs(test - forc))
+        mase <- (sum_abs_err / length(test)) / scaling_factor
+        return(mase)
+}
+
+# Calculate root mean squared scaled error
+calculate_rmsse <- function(test, train, forc, scaling_factor) {
+        sum_err <- sum(test - forc)
+        rmsse <- sqrt(((sum_err / length(test)) / scaling_factor)^2)
+        return(rmsse)
+}
+
+# Calculate median absolute scaled error
+calculate_mdase <- function(test, train, forc, scaling_factor) {
+        med_abs_err <- median(abs(test - forc))
+        mdase <- med_abs_err / scaling_factor
+        return(mdase)
+}
+
 # Function for preparing a list of training and
 # testing sets with different lags to feed into the
 # neural network.

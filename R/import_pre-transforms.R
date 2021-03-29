@@ -98,23 +98,6 @@ diff_list <- mclapply(ts_list, log) %>%
 const_int <- sapply(ts_list, head, n = 1)
 const_int <- log(const_int)
 
-# Create Boxplots for the time series
-make_Boxplot <- function(list) {
-
-        for (i in seq_len(length(list))) {
-
-                pdf(file = paste0("./img/raw_series/boxplots/",
-                                  names_complete[i],
-                                  "_boxPlot"), width = 4)
-                boxplot(list[[i]], main = paste0("Boxplot for ", names_complete[i]),
-                        xlab = NULL, range = 2)
-                abline(h = 0)
-                dev.off()
-
-        }
-
-}
-
 # Remove the extreme outliers which lie outside the .01 and.99 quantile
 for (i in seq_len(length(diff_list))) {
 

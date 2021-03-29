@@ -5,7 +5,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 source("./import_pre-transforms.R", echo = F)
 
 # Source helper functions
-source("./aux/helper.R")
+source("./auxf/helper.R")
 
 out.sample <- 7
 
@@ -18,8 +18,10 @@ for (i in  seq_len(length(ts.list) / 2)) {
         ts.list_8_14[[i]] <- ts.list[[i + 7]]
 }
 
-nn.gridsearch_1_7 <- lag_list_nn(ts.list_1_7, c(2,4,7,14), out.sample)
-nn.gridsearch_8_14 <- lag_list_nn(ts.list_8_14, c(2,4,7,14), out.sample)
+lags <- c(2,4,7,14)
+
+nn.gridsearch_1_7 <- lag_list_nn(ts.list_1_7, lags, out.sample)
+nn.gridsearch_8_14 <- lag_list_nn(ts.list_8_14, lags, out.sample)
 
 # In this function I gridsearch through different lags
 # for the neural network in order to later
@@ -36,7 +38,7 @@ super_grid_search <- function(nnLagGrid, flags, train.schedule) {
         ind <- list()
         naming <- vector()
 
-        # Iterate over indices
+        # Iterate over time series
         for (i in seq_len(length(nnLagGrid[[1]]$train$x.train))) {
                 lags <- list()
 
@@ -62,9 +64,10 @@ super_grid_search <- function(nnLagGrid, flags, train.schedule) {
                 names(lags) <- naming
                 ind[[i]] <- lags
         }
-        #names(ind) <- names_complete
         return(ind)
 }
+
+
 flags.mlp <-  list(dropout = c(.1),
                    dense.units = c(16, 32, 64, 128),
                    val.split = c(.1, .2),
@@ -75,6 +78,7 @@ flags.lstm <- list(dropout = c(0.1),
                    lstm.units2 = c(16,32,64),
                    val.split = c(0.2),
                    neg.slope = c(0,0.02))
+
 mlp_grid_search <- super_grid_search(nn.gridsearch,
                                      flags = flags.mlp,
                                      "./schedules/mlp_train.R")
@@ -93,6 +97,24 @@ lstm2 <- readRDS("./_objects/lstm_8_14_fit.rds")
 lstm_gridsearch <- c(lstm1, lstm2)
 names(lstm_gridsearch) <- names_complete
 
+# Add a column to the tf_runs df with the lag at which the run was done
+add_lag <- function(runsList, lag.vector) {
+        
+        if (length(runsList[[1]]) != length(lag.vector))
+                stop("wrong length for lag vector")
+        
+        for (i in seq_len(length(runsList))) {
+                
+                for (j in seq_len(length(runsList[[i]]))) {
+                        
+                        runsList[[i]][[j]][["Lag"]] <- rep(lag.vector[j],
+                                                           nrow(runsList[[i]][[j]]))
+                }
+        }
+        
+        return(runsList)
+}
+
 # Extract the first and second best run
 # (second one for comparison)
 get_best_runs <- function(runsList) {
@@ -102,11 +124,23 @@ get_best_runs <- function(runsList) {
         for (i in seq_len(length(reduced))) {
 
                 ordered <- reduced[[i]][order(reduced[[i]]$metric_val_loss), ]
-                best[[i]] <- ordered[c(1,2), ]
+                best[[i]] <- ordered[1, ]
 
         }
         names(best) <- names_complete
         return(best)
 
 }
-ppp <- get_best_runs(lstm_gridsearch)
+best_runs <- get_best_runs(lstm_gridsearch)
+
+# Extract flags from best run for training
+extract_flags <- function(runsList) {
+        
+        flags <- list()
+        for (i in seq_len(length(runsList))) {
+                flags[[i]] <- runsList[[i]] %>% select(tidyselect::contains("flag"))
+        }
+        return(flags)
+}
+
+train_and_predict <- function(series, flags)

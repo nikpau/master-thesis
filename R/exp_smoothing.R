@@ -11,19 +11,13 @@ error_metrics_ets <- function(etsLIST, training_set, testing_set) {
                 MASE_scaling_factor <- MASE_scaling_factor(train)
 
                 #MASE
-                sum_abs_err <- sum(abs(test - forc))
-                mase <- (sum_abs_err / length(test)) / MASE_scaling_factor
-                resdf[i, 2] <- mase
-
+                resdf[i, 2] <- calculate_mase(test, train, forc, MASE_scaling_factor)
+                
                 #RMSSE
-                sum_err <- sum(test - forc)
-                rmsse <- sqrt(((sum_err / length(test)) / MASE_scaling_factor)^2)
-                resdf[i, 1] <- rmsse
-
+                resdf[i, 1] <- calculate_rmsse(test, train, forc, MASE_scaling_factor)
+                
                 #MdASE
-                med_abs_err <- median(abs(test - forc))
-                mdase <- med_abs_err / MASE_scaling_factor
-                resdf[i, 3] <- mdase
+                resdf[i, 3] <- calculate_mdase(test, train, forc, MASE_scaling_factor)
 
         }
         names(resdf) <- c("MASE", "RMSSE", "MdASE")

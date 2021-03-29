@@ -78,9 +78,10 @@ funcEnv <- new.env()
 # Vector with paths to the files to be sourced.
 script_sources <- c("./import_pre-transforms.R",
                     "./descriptives.R",
-                    "./aux/helper.R",
+                    "./auxf/helper.R",
                     "./exp_smoothing.R",
-                    "aux/plotting.R")
+                    "./auxf/plotting.R",
+                    "./ARIMA.R")
 
 # Source the functions and variables into the funcEnv
 invisible(lapply(script_sources, source, local = funcEnv))
@@ -94,6 +95,9 @@ rm(funcEnv, list_of_packages, script_sources)
 ######################################################################
 #                       DESCRIPTIVE STATISTICS
 ######################################################################
+
+# Plot the raw series
+plot_Raw_Series()
 
 # Plot ACFs and PACFs || can be found in ./img/ACFs
 save_ACF(diff_list, n.lag = 90, type = "acf")

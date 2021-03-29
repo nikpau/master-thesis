@@ -128,7 +128,7 @@ recursive_col_Names <- function(n, String){
 
 # Create Bootstrap replicates of an ARIMA series. I only consider ARIMA(p,1,q) models
 # as all my seris are stationary already, and thus dont need diffrencing.
-make_bootsrapped_series_from_arima <- function(arima_residuals, series, coefs, order = c(0,0), n = 100, 
+bootsrapp_from_arima <- function(arima_residuals, series, coefs, order = c(0,0), n = 100, 
                                                out.sample = 30, parallel = F){
 
         # Rescale arima_residuals

@@ -211,3 +211,39 @@ backtesting_ARIMA  <- function(rsplit_list, orders, horizon = 60, gridSearch = F
         list(ErrorMetrics = res)
 }
 test2 <- backtesting_ARIMA(ts_list_splits_diff, orders = test, gridSearch = F)
+#################################################################################
+
+############### BOOTSTRAPPING #################################
+
+# Source the bootstrapping procedure after Pascual et al. (2004)
+source("./bootstrap.R", 
+       echo = F)
+
+arima.residuals <- mclapply(auto.arima.list, FUN = residuals)
+
+# Generate 1000 bootstrap repetition for each series
+
+bootstrap_list <- list()
+
+for(i in 1:length(auto.arima.list)){
+        
+        # Print current state.
+        print(noquote(paste0("Bootstrapping ",names_complete[i])))
+        
+        bootstrap_list[[i]] <- make_bootsrapped_series_from_arima(arima_residuals = arima.residuals[[i]], 
+                                                                  series = auto.arima.list[[i]][["x"]],
+                                                                  coefs = coef(auto.arima.list[[i]]),
+                                                                  order = c(auto.arima.list[[i]]$arma[1],
+                                                                            auto.arima.list[[i]]$arma[2]),
+                                                                  n = 1000, # 1000 bootstrapped series are re-sampled
+                                                                  out.sample = out.sample,
+                                                                  parallel = T)
+        
+}
+# Name the list with the bootstrapped series
+names(bootstrap_list) <- names_complete
+
+# Forecast the bootstrapped series, with parallel support. Computationally demanding. 
+boot.forecast <- lapply(bootstrap_list,Boots_Predict, parallel = T, n.ahead = out.sample)
+
+
