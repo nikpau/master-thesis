@@ -17,9 +17,9 @@ list_Auto_Arima <- function(list,out.sample = 30,crit = c("aicc","aic","bic"), p
                 train <- head(list[[entry]], -out.sample)
 
                 res[[entry]] <- forecast::auto.arima(train, d = 1, D = 0,
-                                                     max.p = 7,
-                                                     max.q = 7,
-                                                     max.order = 14,
+                                                     max.p = 12,
+                                                     max.q = 12,
+                                                     max.order = 24,
                                                      max.d = 1, max.D = 0,
                                                      stationary = F,
                                                      seasonal = F,

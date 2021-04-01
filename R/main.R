@@ -27,8 +27,8 @@ list_of_packages <- c("moments",
                       "tfestimators",
                       "tfruns",
                       "rsample",
-                      "recipes",
-                      "extrafont")
+                      "recipes"
+                      )
 
 # Create a list of all missing packages
 new_packages <- list_of_packages[!(list_of_packages %in%
@@ -43,13 +43,6 @@ invisible(
 
           lapply(list_of_packages, library, character.only = T)
 )
-
-# Just for prettier plotting as all my plots will be created
-# in R rather than in TeX.
-# Autodetect the directory containing the TrueType fonts.
-# This has to be done only once.
-font_import()
-loadfonts()
 
 #### KERAS INFORMATION ########
 #
@@ -175,24 +168,28 @@ plot_save_forecast(holt, train_test_ets$test, 20, "./img/exp_sm/holt")
 ######################################################################
 #                         ARIMA 
 ######################################################################
-
+ b = lapply(ts_list,log)
 # Training and testing sets for ARIMA estimation
 train_test_arima <- make_training_and_testing_sets(
 
-                                                   ts_list, 
+                                                   b, 
                                                    OUT_SAMPLE
 )
 
 # Estimation of up to ARMA(7,7)
-auto_arima_list <- list_Auto_Arima(
+auto_arima_list_aicc <- list_Auto_Arima(
 
-                                   ts_list, 
-                                   crit = "bic",
+                                   b, 
+                                   crit = "aicc",
                                    parallel = T, 
                                    n.cores = mc_cores, 
                                    out.sample = OUT_SAMPLE
 
 )
+
+# Extract the orders of the fitted arima models
+arma_orders_bic <- get_orders_from_arima_fit(auto_arima_list)
+arma_orders_aicc <- get_orders_from_arima_fit(auto_arima_list_aicc)
 
 # Extract information criteria from the arima fits
 arima_info_crits <- info_crits_arima(auto_arima_list)

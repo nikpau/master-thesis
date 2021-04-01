@@ -21,29 +21,33 @@ plot_save_forecast <- function(forecast, testset, window, path) {
     li <- forecast[[i]]$lower[,2]
     
     pdf(file = paste0(path, "/", names_complete[i],"_exp_sm.pdf"), 
-        height = 5,
-        family = "Times")
+        height = 5)
     # Plot series
     
     plot(
       series, 
-      type = "l", 
+      type = "b",
+      lty = 1,
+      pch = 18,
+      frame = F,
       lwd = 2,
       xlab = "Index",
       ylab = "Series",
-      ylim = c(floor(miny(series,test)), ceiling(maxy(series,test))),
+      col = "#002B36",
+      ylim = c(miny(series,test), maxy(series,test)),
       xlim = c(length(forecast[[i]]$x) - window, 
                length(forecast[[i]]$x) + length(test)),
       main = paste0(names_complete[i], " ", length(test), " days ahead")
     )
-    abline(v = length(forecast[[i]]$x))
+    abline(v = length(forecast[[i]]$x), lwd  = 2)
     
     add_lines(forc, trans_forc, test, trans_true)
     
     #CI
-    lines(ui, type = "b", col = "red4")
-    lines(li, type = "b", col = "red4")
+    lines(ui, type = "b", col = "#B58900", pch = 2)
+    lines(li, type = "b", col = "#B58900", pch = 2)
     grid()
+    plot_legend()
     dev.off()
   }
   cat("Done \n")
@@ -67,8 +71,20 @@ maxy <- function(series, test) {
 
 # Add forecasted values as lines to the plot
 add_lines <- function(forc, trans_forc, true, trans_true) {
-  lines(forc, type = "l", lwd = 2, col = "blue2")
-  lines(trans_forc, type = "l", lty = 2, lwd = 2, col = "blue2")
-  lines(true, type = "l", lwd = 2, col = "green4")
-  lines(trans_true, type = "l", lty = 2, lwd = 2, col = "green4")
+  # Forecast
+  lines(forc, type = "b", lwd = 2, col = "#859900", pch = 4)
+  lines(trans_forc, type = "l", lty = 4, lwd = 2, col = "#859900")
+  # True model
+  lines(true, type = "b", lwd = 2, col = "#268BD2", pch = 18)
+  lines(trans_true, type = "l", lty = 4, lwd = 2, col = "#268BD2")
+}
+
+# Legend
+plot_legend <- function() {
+  legend("topleft", legend = c("Series", "True", "Predict"),
+         col = c("#002B36","#268BD2","#859900"),
+         lty = c(1,4,4),
+         pch = c(18,18,4),
+         bg = "white",
+         lwd = 2)
 }
