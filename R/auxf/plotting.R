@@ -55,18 +55,18 @@ plot_save_forecast <- function(forecast, testset, window, path) {
 }
 # Find minimum y value of test set and series
 miny <- function(series, test) {
-  if (min(series) < min(test))
-    min(series)
+  if (min(series, na.rm = T) < min(test, na.rm = T))
+    min(series, na.rm = T)
   else
-    min(test)
+    min(test, na.rm = T)
 }
 
 # Find minimum y value of test set and series
 maxy <- function(series, test) {
-  if (max(series) > max(test))
-    max(series)
+  if (max(series, na.rm = T) > max(test, na.rm = T))
+    max(series, na.rm = T)
   else
-    max(test)
+    max(test, na.rm = T)
 }
 
 # Add forecasted values as lines to the plot
@@ -87,4 +87,69 @@ plot_legend <- function() {
          pch = c(18,18,4),
          bg = "white",
          lwd = 2)
+}
+
+# Plotting function for the neural networks
+plot_save_nn <- function(nnPrediction, window, type) {
+  
+  for (i in seq_len(length(nnPrediction))) {
+    
+    series <- nnPrediction[[i]]$train %>% 
+      ts(start = 1, end = length(nnPrediction[[i]]$train)) %>% 
+      tail(window)
+    
+    forc <-  nnPrediction[[i]]$forc %>% 
+      ts(start = length(nnPrediction[[i]]$train) + 1, 
+         end = length(nnPrediction[[i]]$train) + 1 + length(nnPrediction[[i]]$forc))
+    
+    test <-  nnPrediction[[i]]$test %>% 
+      ts(start = length(nnPrediction[[i]]$train) + 1, 
+         end = length(nnPrediction[[i]]$train) + 1 + length(nnPrediction[[i]]$forc))
+    
+    trans_true <- ts(c(tail(series,1), head(test,1)), 
+                     start = length(nnPrediction[[i]]$train),
+                     end = length(nnPrediction[[i]]$train) +1)
+    trans_forc <- ts(c(tail(series,1), head(forc,1)), 
+                     start = length(nnPrediction[[i]]$train),
+                     end = length(nnPrediction[[i]]$train) + 1)
+    
+    if (type == "lstm") {
+      path <- "./img/ann_forecast/lstm/"
+    ending <- paste0(names_complete[i], "_lstm_forecast.pdf")
+    }
+    else {
+      path <- "./img/ann_forecast/mlp/"
+    ending <- paste0(names_complete[i], "_mlp_forecast.pdf")
+    }
+    
+    pdf(file = paste0(path,ending), 
+        height = 5)
+    
+    plot(
+      series, 
+      type = "b",
+      lty = 1,
+      pch = 18,
+      frame = F,
+      lwd = 2,
+      xlab = "Index",
+      ylab = "Series",
+      col = "#002B36",
+      ylim = c(miny(series,test), maxy(series,test)),
+      xlim = c(length(nnPrediction[[i]]$train) - window, 
+               length(nnPrediction[[i]]$train) + length(nnPrediction[[i]]$forc)),
+      main = paste0(names_complete[i], " ", length(nnPrediction[[i]]$forc), " days ahead")
+    )
+    
+    abline(v = length(nnPrediction[[i]]$train), lwd  = 2)
+    
+    add_lines(forc, trans_forc, test, trans_true)
+    
+    grid()
+    plot_legend()
+    
+    dev.off()
+    
+  }
+  
 }

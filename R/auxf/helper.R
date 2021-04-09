@@ -38,7 +38,7 @@ lag_list_nn <- function(data, lag.vector, out.sample) {
         lag.list <- list()
         for (i in seq_len(length(lag.vector))) {
                 cat(paste0("Preparing Lag ", lag.vector[i], "\n"))
-                lag.list[[i]] <- pre_process_mlp(data, lag.vector[[i]], out.sample)
+                lag.list[[i]] <- pre_process(data, lag.vector[[i]], out.sample)
 
         }
         class(lag.list) <- "nnLagGrid"
@@ -51,14 +51,24 @@ lag_list_nn <- function(data, lag.vector, out.sample) {
 # to process all univariate time series at once.
 # holdoud = length of test set
 # n.lag = numer of past obervations used for one timestep
-pre_process_mlp <- function(data, n.lag, holdout) {
+pre_process <- function(data, n.lag, holdout) {
 
+        if (typeof(data) == "list")
+                set_length <- length(data)
+        else
+                set_length <- 1
         # Data transformations
         transforms <- list()
         history <- list()
 
-        for (i in seq_len(length(data))) {
-                df <- tibble(raw.ts = data[[i]])
+        for (i in seq_len(set_length)) {
+                if (typeof(data) == "list") {
+                        df <- tibble(raw.ts = data[[i]])
+                }
+                else {
+                        df <- tibble(raw.ts = data)
+                }
+                
                 rec <- recipe(~., df) %>%
                         step_log(raw.ts) %>% # log transform
                         step_center(raw.ts) %>% # center data to μ = 0
@@ -71,8 +81,16 @@ pre_process_mlp <- function(data, n.lag, holdout) {
                 # Center and scale history for later back-transformation
                 center.history <- rec[["steps"]][[2]][["means"]][["raw.ts"]]
                 scale.history <- rec[["steps"]][[3]][["sds"]][["raw.ts"]]
-                history[[i]] <- list(center.history = center.history,
-                                     scale.history = scale.history)
+                
+                if (typeof(data) == "list") {
+                        history[[i]] <- list(center.history = center.history,
+                                             scale.history = scale.history)
+                }
+                else {
+                        history <- list(center.history = center.history,
+                                             scale.history = scale.history)
+                }
+                
         }
 
         # Create lagged x.input and x.test matrices to train and test
@@ -118,21 +136,6 @@ pre_process_mlp <- function(data, n.lag, holdout) {
         return(list(train = list(x.train = x.train, y.train = y.train),
                     test = list(x.test = x.test, y.test = y.test),
                     history = history))
-}
-# Retrieve summarized error metrics from the neural net training process
-error_metrics_nn <- function(pred, test, train) {
-
-        res <- matrix(ncol = 3)
-
-        #RMSE
-        res[1,1] <- accuracy(pred, test)[2]
-        MASE.scaling.factor <- MASE_scaling_factor(train)
-        sum_abs_err <- sum(abs(test - pred))
-        res[1,2] <- (sum_abs_err / length(test)) / MASE.scaling.factor
-        res[1,3] <- accuracy(pred, test)[3]
-
-        return(res)
-
 }
 
 # Workhorse of the neural net data transformation

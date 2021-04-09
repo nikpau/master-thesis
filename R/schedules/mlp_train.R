@@ -22,6 +22,8 @@ model %>%
         layer_dense(units = FLAGS$dense.units,
                     input_shape = dim(x.train)[2]) %>%
         layer_activation_relu(negative_slope = FLAGS$neg.slope) %>%
+        layer_dense(units = FLAGS$dense.units) %>%
+        layer_activation_relu(negative_slope = FLAGS$neg.slope) %>%
         layer_dense(units = 1)
 
 model %>%
@@ -40,13 +42,3 @@ history <- model %>% fit(
                                                             patience = 10),
                          validation_split = FLAGS$val.split
 )
-
-# plot(history)
-#
-# score <- model %>% evaluate(
-#                             x.test, y.test,
-#                             verbose = 0
-# )
-# 
-# cat('Test loss:', score$loss, '\n')
-# cat('Test accuracy:', score$acc, '\n')

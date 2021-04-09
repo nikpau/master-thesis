@@ -225,4 +225,86 @@ plot_save_forecast(
                    20,
                    "./img/arima_forecast"
 )
-################ ANNs ##############################################
+##############################################################
+#                ANNs
+#############################################################
+
+# Split the ts_list into two parts because of memory usage (16Gb on my machine 
+# is not enough to train in one batch)
+ts_list_1_7 <- list()
+ts_list_8_14 <- list()
+for (i in  seq_len(length(ts_list) / 2)) {
+  ts_list_1_7[[i]] <- ts_list[[i]]
+  ts_list_8_14[[i]] <- ts_list[[i + 7]]
+}
+
+# Create Vector of lags to train on the networks
+lags_lstm <- c(2,4,7,14)
+lags_mlp <- c(2,4,7,10,14)
+
+# Create supervised learning problems (split the series into a labeled train 
+# and test set), for all the lags from the lag vector
+nn.gridsearch_1_7 <- lag_list_nn(ts_list_1_7, lags, OUT_SAMPLE)
+nn.gridsearch_8_14 <- lag_list_nn(ts_list_8_14, lags, OUT_SAMPLE)
+
+flags.mlp <-  list(dropout = c(.1),
+                   dense.units = c(16, 32, 64, 128),
+                   val.split = c(.1, .2),
+                   neg.slope = c(0, 0.02))
+
+flags.lstm <- list(dropout = c(0.1),
+                   lstm.units1 = c(16,32,64),
+                   lstm.units2 = c(16,32,64),
+                   val.split = c(0.2),
+                   neg.slope = c(0,0.02))
+
+########## Actual Training #########################################
+
+# This is the actual training process using the 'super_grid_search'
+# function located in ./neural-nets.R
+#
+# Training takes around 4-6 hours for the MLP and 8-16 hours for the LSTM.
+# If you run this yourself, please be aware that due to the nature of the 
+# stochastic gradient descent that is used, your results are likely to be 
+# different from the ones I saved from my training
+
+# mlp_grid_search <- super_grid_search(nn.gridsearch,
+#                                      flags = flags.mlp,
+#                                      "./schedules/mlp_train.R")
+# 
+# lstm_grid_search_1_7 <- super_grid_search(nn.gridsearch_1_7,
+#                                           flags = flags.lstm,
+#                                           "./schedules/lstm_train.R")
+# 
+# lstm_grid_search_8_14 <- super_grid_search(nn.gridsearch_8_14,
+#                                            flags = flags.lstm,
+#                                            "./schedules/lstm_train.R")
+
+#########################################################################
+
+# Load in the finished training runs with all the hyperparameters,
+# architectures and loss values.
+
+#MLP
+mlp_runs <- readRDS("./_objects/mlp_fit.rds")
+
+# LSTM
+lstm1 <- readRDS("./_objects/lstm_1_7_fit.rds")
+lstm2 <- readRDS("./_objects/lstm_8_14_fit.rds")
+
+lstm_runs <- c(lstm1, lstm2)
+names(lstm_runs) <- names_complete
+rm(lstm1,lstm2)
+
+# Add a column with the lag at which training has been conducted
+mlp_runs <- add_lag(mlp_runs, lags_mlp)
+lstm_runs <- add_lag(lstm_runs, lags_lstm)
+
+# Extract the best run from the tuning runs
+mlp_best_runs <- get_best_runs(mlp_runs)
+lstm_best_runs <- get_best_runs(lstm_runs)
+
+# Extract the hyperparameters that yielded the best runs
+mlp_best_flags <- extract_flags(mlp_best_runs)
+lstm_best_flags <- extract_flags(lstm_best_runs)
+

@@ -94,10 +94,10 @@ error_metrics_arima <- function(forecasts, testsets, trainsets) {
                 MASE_scaling_factor <- MASE_scaling_factor(train)
                 
                 #MASE
-                resdf[entry, 2] <- calculate_mase(test, train, forc, MASE_scaling_factor)
+                resdf[entry, 1] <- calculate_mase(test, train, forc, MASE_scaling_factor)
                 
                 #RMSSE
-                resdf[entry, 1] <- calculate_rmsse(test, train, forc, MASE_scaling_factor)
+                resdf[entry, 2] <- calculate_rmsse(test, train, forc, MASE_scaling_factor)
                 
                 #MdASE
                 resdf[entry, 3] <- calculate_mdase(test, train, forc, MASE_scaling_factor)

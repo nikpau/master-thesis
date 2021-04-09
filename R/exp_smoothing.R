@@ -11,10 +11,10 @@ error_metrics_ets <- function(etsLIST, training_set, testing_set) {
                 MASE_scaling_factor <- MASE_scaling_factor(train)
 
                 #MASE
-                resdf[i, 2] <- calculate_mase(test, train, forc, MASE_scaling_factor)
+                resdf[i, 1] <- calculate_mase(test, train, forc, MASE_scaling_factor)
                 
                 #RMSSE
-                resdf[i, 1] <- calculate_rmsse(test, train, forc, MASE_scaling_factor)
+                resdf[i, 2] <- calculate_rmsse(test, train, forc, MASE_scaling_factor)
                 
                 #MdASE
                 resdf[i, 3] <- calculate_mdase(test, train, forc, MASE_scaling_factor)
