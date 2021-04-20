@@ -50,7 +50,8 @@ invisible(
 # you can do so by executing the install_keras() function below.
 # For details see the documentation at:
 #                   'https://keras.rstudio.com/reference/install_keras.html'
-install_keras()
+
+# install_keras()
 
 # Detect the number of cores on your system to enable multi-core processing.
 # Last core is omitted to prevent system freeze during exec.
@@ -74,7 +75,8 @@ script_sources <- c("./import_pre-transforms.R",
                     "./auxf/helper.R",
                     "./exp_smoothing.R",
                     "./auxf/plotting.R",
-                    "./ARIMA.R")
+                    "./ARIMA.R",
+                    "./neural-nets.R")
 
 # Source the functions and variables into the funcEnv
 invisible(lapply(script_sources, source, local = funcEnv))
@@ -104,6 +106,10 @@ adf_test <- list_ADF(diff_list)
 # KPSS test
 kpss_test <- list_KPSS(diff_list)
 
+# Tests for normality with both the raw data and the differenced one
+jb_test_raw <- list_JB(ts_list)
+jb_test_diff <- list_JB(lapply(ts_list, diff))
+
 #######################################################################
 #                           ESTIMATIONS 
 #######################################################################
@@ -124,7 +130,7 @@ ses <- lapply(
               train_test_ets$train,
               forecast::ses,
               h = OUT_SAMPLE,
-              ic = "bic"
+              ic = "aicc"
 )
 
 # Fitting Holt's linear trend method to the data
@@ -133,12 +139,50 @@ holt <- lapply(
                train_test_ets$train,
                forecast::holt,
                h = OUT_SAMPLE,
-               ic = "bic"
+               ic = "aicc"
 )
+
+# Fitting Holt's linear damped-trend method to the data
+damped_holt <- lapply(
+  
+  train_test_ets$train,
+  forecast::holt,
+  h = OUT_SAMPLE,
+  ic = "aicc",
+  damped = T
+)
+
+# Write ses parameters into data frame
+ses_pars <- as.data.frame(matrix(ncol = 2, nrow = length(names_complete)))
+ses_pars[,1] <- names_complete
+names(ses_pars) <- c("Index", "alpha")
+for (i in seq_len(length(names_complete))) {
+  ses_pars[i,2] <- ses[[i]]$model$par[1]
+}
+
+# Write holt parameters into data frame
+holt_pars <- as.data.frame(matrix(ncol = 3, nrow = length(names_complete)))
+holt_pars[,1] <- names_complete
+names(holt_pars) <- c("Index", "alpha", "gamma")
+for (i in seq_len(length(names_complete))) {
+  holt_pars[i,2] <- holt[[i]]$model$par[1]
+  holt_pars[i,3] <- holt[[i]]$model$par[2]
+}
+
+# Write damped  holt parameters into data frame
+damped_holt_pars <- as.data.frame(matrix(ncol = 4, nrow = length(names_complete)))
+damped_holt_pars[,1] <- names_complete
+names(damped_holt_pars) <- c("Index", "alpha", "gamma","phi")
+for (i in seq_len(length(names_complete))) {
+  damped_holt_pars[i,2] <- damped_holt[[i]]$model$par[1]
+  damped_holt_pars[i,3] <- damped_holt[[i]]$model$par[2]
+  damped_holt_pars[i,4] <- damped_holt[[i]]$model$par[3]
+}
 
 # Error Metrics
 ses_error <- error_metrics_ets(ses, train_test_ets$train, train_test_ets$test)
 holt_error <- error_metrics_ets(holt, train_test_ets$train, train_test_ets$test)
+damped_holt_error <- error_metrics_ets(damped_holt, train_test_ets$train, train_test_ets$test)
 
 # Naming the error metrics
 ses_error <- bind_cols(
@@ -153,33 +197,61 @@ holt_error <- bind_cols(
                         holt_error
 )
 
+damped_holt_error <- bind_cols(
+  
+  Index = names_complete,
+  damped_holt_error
+)
+
 # Information criteria for ets fit
 ses_info_crits <- info_crits_ets(ses)
 holt_info_crits <- info_crits_ets(holt)
+damped_holt_info_crits <- info_crits_ets(damped_holt)
 
 # Naming the information criteria
 ses_info_crits <- bind_cols(Index = names_complete, ses_info_crits)
 holt_info_crits <- bind_cols(Index = names_complete, holt_info_crits)
+damped_holt_info_crits <- bind_cols(Index = names_complete, damped_holt_info_crits)
+
+# Ljung-Box test for the ses residuals
+ses_resid <- lapply(ses, residuals)
+ses_ljungBox <- lapply(ses_resid, Box.test, type = "L", lag = 2)
+ses_ljungBox_summary <- data.frame(matrix(ncol = 3, nrow = length(names_complete)))
+ses_ljungBox_summary[,1] <- names_complete
+for (i in seq_len(length(names_complete))) {
+  ses_ljungBox_summary[i,2] <- ses_ljungBox[[i]]$statistic
+  ses_ljungBox_summary[i,3] <- ses_ljungBox[[i]]$p.value
+}
+names(ses_ljungBox_summary) <- c("Index", "Test statistic", "p.value")
 
 # Plotting
 plot_save_forecast(ses, train_test_ets$test, 20, "./img/exp_sm/ses")
 plot_save_forecast(holt, train_test_ets$test, 20, "./img/exp_sm/holt")
+plot_save_forecast(damped_holt, train_test_ets$test, 20, "./img/exp_sm/damped_holt")
+
+
 
 ######################################################################
-#                         ARIMA 
+#                         ARIMA assuming Normal
 ######################################################################
- b = lapply(ts_list,log)
+
+# Log_ transform for the indices
+log_indices = lapply(ts_list,log)
+
 # Training and testing sets for ARIMA estimation
 train_test_arima <- make_training_and_testing_sets(
 
-                                                   b, 
+                                                   log_indices, 
                                                    OUT_SAMPLE
 )
 
-# Estimation of up to ARMA(7,7)
-auto_arima_list_aicc <- list_Auto_Arima(
+# Estimation of up to ARMA(14,14). Computationally intensive!
+#
+# Fitted object can directly be loaded via 
+# auto_arima_list <- readRDS("./_objects/arima_fit.rds")
+auto_arima_list <- list_Auto_Arima(
 
-                                   b, 
+                                   log_indices, 
                                    crit = "aicc",
                                    parallel = T, 
                                    n.cores = mc_cores, 
@@ -187,9 +259,19 @@ auto_arima_list_aicc <- list_Auto_Arima(
 
 )
 
+# Ljung-Box test for the arima residuals
+arima_resid <- lapply(auto_arima_list, residuals)
+arima_ljungBox <- lapply(arima_resid, Box.test, type = "L", lag = 1)
+arima_ljungBox_summary <- data.frame(matrix(ncol = 3, nrow = length(names_complete)))
+arima_ljungBox_summary[,1] <- names_complete
+for (i in seq_len(length(names_complete))) {
+  arima_ljungBox_summary[i,2] <- arima_ljungBox[[i]]$statistic
+  arima_ljungBox_summary[i,3] <- arima_ljungBox[[i]]$p.value
+}
+names(arima_ljungBox_summary) <- c("Index", "Test statistic", "p.value")
+
 # Extract the orders of the fitted arima models
-arma_orders_bic <- get_orders_from_arima_fit(auto_arima_list)
-arma_orders_aicc <- get_orders_from_arima_fit(auto_arima_list_aicc)
+arma_orders_aicc <- get_orders_from_arima_fit(auto_arima_list)
 
 # Extract information criteria from the arima fits
 arima_info_crits <- info_crits_arima(auto_arima_list)
@@ -223,8 +305,76 @@ plot_save_forecast(
                    arima_forecast,
                    train_test_arima$test,
                    20,
-                   "./img/arima_forecast"
+                   "./img/arima_forecast/norm"
 )
+
+############################################################
+#                 Arima assuming Skewed student t
+#############################################################
+cl <- makeCluster(mc_cores)
+
+# Create training and testing sets
+train_test_arima_std <- make_training_and_testing_sets(diff_list, OUT_SAMPLE)
+
+arima_sstd <- lapply(train_test_arima_std$train, autoarfima, ar.max = 5, ma.max = 5, 
+                     method = "full", distribution.model = "sstd", include.mean = F,
+                     criterion = "BIC", cluster = cl)
+
+# Extract residuals
+sstd_resid <- lapply(arima_sstd, function(x) return(x$fit@fit$residuals))
+
+# Ljung-Box test for the arima_sstd residuals
+sstd_ljungBox <- lapply(sstd_resid, Box.test, type = "L", lag = 1)
+sstd_ljungBox_summary <- data.frame(matrix(ncol = 3, nrow = length(names_complete)))
+sstd_ljungBox_summary[,1] <- names_complete
+for (i in seq_len(length(names_complete))) {
+  sstd_ljungBox_summary[i,2] <- sstd_ljungBox[[i]]$statistic
+  sstd_ljungBox_summary[i,3] <- sstd_ljungBox[[i]]$p.value
+}
+names(sstd_ljungBox_summary) <- c("Index", "Test statistic", "p.value")
+
+# Forecast skew t arima
+arima_sstd_forecast <-lapply(arima_sstd, 
+                             function(x) return(arfimaforecast(x[[1]], 
+                                                               n.ahead = OUT_SAMPLE)))
+
+# Extract the forecasts, stitch them back to the series, and un-difference
+sstd_retransformed <- sstd_retransform(arima_sstd_forecast, train_test_arima_std$train, const_int)
+
+# Extract only the forecast values
+sstd_plain_forecast <- lapply(sstd_retransformed, tail, n = OUT_SAMPLE)
+
+# Write error metrics into data frame
+arima_sstd_error <- error_metrics_arima(
+  
+  forecasts = sstd_plain_forecast,
+  make_training_and_testing_sets(ts_list, OUT_SAMPLE)$test,
+  make_training_and_testing_sets(ts_list, OUT_SAMPLE)$train
+  
+)
+
+arima_sstd_error <- bind_cols(
+  
+  Index = names_complete,
+  arima_sstd_error
+  
+)
+
+# Re-create test-set for plotting
+testSet_sstd <- make_training_and_testing_sets(ts_list, OUT_SAMPLE)$test
+
+# Plotting and saving
+plot_save_forecast(
+  
+  seriesWithForc = sstd_retransformed,
+  testset = testSet_sstd,
+  window = 20,
+  path = "./img/arima_forecast/sstd",
+  n.ahead = OUT_SAMPLE
+)
+
+
+
 ##############################################################
 #                ANNs
 #############################################################
@@ -308,3 +458,27 @@ lstm_best_runs <- get_best_runs(lstm_runs)
 mlp_best_flags <- extract_flags(mlp_best_runs)
 lstm_best_flags <- extract_flags(lstm_best_runs)
 
+# Train the final networks with the extracted flags
+mlp_final <- train_and_predict(ts_list, mlp_best_flags, OUT_SAMPLE, "mlp")
+lstm_final <- train_and_predict(ts_list, lstm_best_flags, OUT_SAMPLE, "lstm")
+
+# Get error metrics for the neural network trainings
+mlp_error <- error_metrics_nn(mlp_final)
+lstm_error <- error_metrics_nn(lstm_final)
+
+# Naming the errors for a better overview
+mlp_error <- bind_cols(
+  
+  Index = names_complete, 
+  mlp_error
+)
+
+lstm_error <- bind_cols(
+  
+  Index = names_complete, 
+  lstm_error
+)
+
+# Plot the results of the neural network prediction
+plot_save_nn(mlp_final, 20, "mlp")
+plot_save_nn(lstm_final, 20, "lstm")

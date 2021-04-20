@@ -90,7 +90,13 @@ error_metrics_arima <- function(forecasts, testsets, trainsets) {
                 
                 test <- testsets[[entry]]
                 train <- trainsets[[entry]]
-                forc <- forecasts[[entry]]$mean
+                
+                if (any(class(forecasts[[1]]) == "forecast")) {
+                        forc <- forecasts[[entry]]$mean
+                }
+                else {
+                        forc <- forecasts[[entry]]
+                }
                 MASE_scaling_factor <- MASE_scaling_factor(train)
                 
                 #MASE
@@ -108,6 +114,9 @@ error_metrics_arima <- function(forecasts, testsets, trainsets) {
 
 # Save QQ-Normal plots for the residuals of the arima fits
 save_resid_qq <- function(autoARIMAList) {
+        
+        op <- par(no.readonly = T)
+        
 
         if (class(autoARIMAList) != "autoArimaList")
                 stop("Input class must be an auto Arima List. \n
@@ -118,12 +127,52 @@ save_resid_qq <- function(autoARIMAList) {
                              pdf(file = paste0("./img/residual_qq/",
                                                names_complete[i],
                                                "_resid_qq_norm.pdf"))
+                             par(mar = c(4,6,4,4)+.1)
                              qqnorm(autoARIMAList[[i]]$residuals,
                                     main = paste0("Residual QQ-Normal Plot for ",
                                                   names_complete[i]),
-                                    lwd = 2)
+                                    lwd = 2, cex = 2, cex.axis = 2, cex.lab = 2,
+                                    cex.main = 2, pch = 18)
                              qqline(autoARIMAList[[i]]$residuals)
+                             grid()
                              dev.off()
 
                      }
+        par(op)
 }
+
+# Function for extracting the forecasts from a rugarch forecast class, glue
+# them to the original series and writing them into a list.
+sstd_retransform <- function(rugarchForecast, trainingData, const_int) {
+        
+        result <- list()
+        for (i in seq_len(length(rugarchForecast))) {
+                stitched <- c(trainingData[[i]], rugarchForecast[[i]]@forecast$seriesFor)
+                result[[i]] <- exp(diffinv(stitched, xi = const_int[i]))
+        }
+        return(result)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

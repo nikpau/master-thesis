@@ -3,7 +3,7 @@
 MASE_scaling_factor <- function(training.data) {
         naive.forecast <- vector()
         for (i in 1:(length(training.data) - 1)) {
-                naive.forecast[i] <- training.data[i+1]-training.data[i]
+                naive.forecast[i] <- (abs(training.data[i+1]-training.data[i]))
         }
         scaling.factor <- sum(abs(naive.forecast)) / (length(training.data) - 1)
         return(scaling.factor)

@@ -159,10 +159,12 @@ do_train_lstm <- function(data, flags) {
                            input_shape = c(dim(data$train$x.train[[1]])[2], 1),
                            return_sequences = T,
                            stateful = F) %>% 
+                layer_activation_relu(negative_slope = flags$flag_neg.slope) %>%
                 layer_dropout(rate = flags$flag_dropout) %>%
                 layer_lstm(units = flags$flag_lstm.units2, 
                            return_sequences = F,
                            stateful = F) %>%
+                layer_activation_relu(negative_slope = flags$flag_neg.slope) %>%
                 layer_dense(units = 1)
         
         lstm_model %>%
@@ -206,7 +208,7 @@ do_train_mlp <- function(data, flags) {
         history <- mlp_model %>% fit(
                 data$train$x.train[[1]], data$train$y.train[[1]],
                 epochs = 100,
-                verbose = 2,
+                verbose = 0,
                 callback = callback_early_stopping(monitor = "val_loss",
                                                    patience = 10),
                 validation_split = flags$flag_val.split
@@ -241,5 +243,4 @@ error_metrics_nn <- function(nnPredictLIst) {
         return(resdf)
         
 }
-ppp <- error_metrics_nn(predict_everything)
-qqq <- error_metrics_nn(predict_everything_mlp)
+

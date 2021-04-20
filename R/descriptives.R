@@ -3,7 +3,7 @@
 # for visual inspection.
 plot_Raw_Series <- function(differencing = F ){
 
-        ts <- date_ts
+        ts <- na.omit(date_ts)
         ts_diff <- diff_list
 
         for (entry in seq_len(length(ts_diff))) {
@@ -116,7 +116,7 @@ list_ADF <- function(list, n.cores = 4) {
 
         for(i in 1:length(adf_results)){
 
-                type2 <- rep("type1", length(adf_results[[i]][[1]][, 1]))
+                type1 <- rep("type1", length(adf_results[[i]][[1]][, 1]))
                 type2 <- rep("type2", length(adf_results[[i]][[2]][, 1]))
                 type3 <- rep("type3", length(adf_results[[i]][[3]][, 1]))
 

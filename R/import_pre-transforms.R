@@ -99,15 +99,15 @@ const_int <- sapply(ts_list, head, n = 1)
 const_int <- log(const_int)
 
 # Remove the extreme outliers which lie outside the .01 and.99 quantile
-for (i in seq_len(length(diff_list))) {
-
-        range  <- c(0.01, 0.99)
-        q <- quantile(ts_list[[i]], probs = range)
-        q_diff <- quantile(diff_list[[i]], probs = range)
-        diff_list[[i]] <- diff_list[[i]][diff_list[[i]] > q_diff[1] & diff_list[[i]] < q_diff[2]]
-        ts_list[[i]] <- ts_list[[i]][ts_list[[i]] > q[1] & ts_list[[i]] < q[2]]
-}
-rm(q, q_diff, range)
+# for (i in seq_len(length(diff_list))) {
+# 
+#         range  <- c(0.01, 0.99)
+#         q <- quantile(ts_list[[i]], probs = range)
+#         q_diff <- quantile(diff_list[[i]], probs = range)
+#         diff_list[[i]] <- diff_list[[i]][diff_list[[i]] > q_diff[1] & diff_list[[i]] < q_diff[2]]
+#         ts_list[[i]] <- ts_list[[i]][ts_list[[i]] > q[1] & ts_list[[i]] < q[2]]
+# }
+# rm(q, q_diff, range)
 
 # Create a training and testing set, based on a user specified holdout peroid
 make_training_and_testing_sets <- function(tsORListOfTs, out.sample = 30) {
