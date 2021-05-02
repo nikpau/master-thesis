@@ -79,32 +79,60 @@ get_orders_from_arima_fit <- function(arimaFITorList) {
         return(resdf)
 }
 
+# Get orders from the rugarch fit
+get_orders_rugarch_arima <- function(rugarchFitlList) {
+
+        coefs <- lapply(rugarchFitlList, function(x) return(coef(x$fit)))
+
+        resdf <- data.frame(matrix(nrow = length(rugarchFitlList), 
+                                   ncol = 3))
+
+        for (i in seq_len(length(rugarchFitlList))) {
+
+                names <- names(coefs[[i]])
+                names <- head(names, -3)
+                ar_order <- sum(str_count(names, pattern = "ar"))
+                ma_order <- sum(str_count(names, pattern = "ma"))
+
+                resdf[i,c(2,3)] <- c(ar_order, ma_order)
+        }
+        resdf[,1] <- names_complete
+        names(resdf) <- c("Index","AR(p)","MA(q)")
+        return(resdf)
+
+}
+
 ########## ERROR METRICS #############################
 
 # Get Error metrics for forecast values.
+# The forecasts coming from the arima fit with normal distribution 
+# will be retransformed right here. 
 error_metrics_arima <- function(forecasts, testsets, trainsets) {
 
         resdf <- data.frame(matrix(ncol = 3, nrow = length(forecasts)))
 
         for (entry in seq_len(length(forecasts))) {
-                
-                test <- testsets[[entry]]
-                train <- trainsets[[entry]]
-                
+
+
+
                 if (any(class(forecasts[[1]]) == "forecast")) {
-                        forc <- forecasts[[entry]]$mean
+                        forc <- exp(forecasts[[entry]]$mean)
+                        test <- exp(testsets[[entry]])
+                        train <- exp(trainsets[[entry]])
                 }
                 else {
                         forc <- forecasts[[entry]]
+                        test <- testsets[[entry]]
+                        train <- trainsets[[entry]]
                 }
                 MASE_scaling_factor <- MASE_scaling_factor(train)
-                
+
                 #MASE
                 resdf[entry, 1] <- calculate_mase(test, train, forc, MASE_scaling_factor)
-                
+
                 #RMSSE
                 resdf[entry, 2] <- calculate_rmsse(test, train, forc, MASE_scaling_factor)
-                
+
                 #MdASE
                 resdf[entry, 3] <- calculate_mdase(test, train, forc, MASE_scaling_factor)
         }
@@ -114,9 +142,9 @@ error_metrics_arima <- function(forecasts, testsets, trainsets) {
 
 # Save QQ-Normal plots for the residuals of the arima fits
 save_resid_qq <- function(autoARIMAList) {
-        
+
         op <- par(no.readonly = T)
-        
+
 
         if (class(autoARIMAList) != "autoArimaList")
                 stop("Input class must be an auto Arima List. \n
@@ -138,19 +166,59 @@ save_resid_qq <- function(autoARIMAList) {
                              dev.off()
 
                      }
-        par(op)
+                     par(op)
 }
 
 # Function for extracting the forecasts from a rugarch forecast class, glue
 # them to the original series and writing them into a list.
 sstd_retransform <- function(rugarchForecast, trainingData, const_int) {
-        
+
         result <- list()
         for (i in seq_len(length(rugarchForecast))) {
                 stitched <- c(trainingData[[i]], rugarchForecast[[i]]@forecast$seriesFor)
                 result[[i]] <- exp(diffinv(stitched, xi = const_int[i]))
         }
         return(result)
+}
+
+# Plot the p-values of JB tests for different lag-values
+plot_JB_lags <- function(residualList, up.to = 20, names, filename) {
+
+        p_vals <- matrix(ncol = up.to, nrow = length(residualList))
+
+        for (k in seq_len(length(residualList))){
+                for (i in seq_len(up.to)) {
+                        p_vals[k,i] <- Box.test(residualList[[k]], lag = i, type = "L")$p.value
+
+                }
+        }
+
+        pdf(file = paste0("./img/residual_JB/",filename,".pdf"), 
+            height = 5, family = "Courier")
+
+        plot(p_vals[1,], type = "b", pch = 12, xaxt = "n",
+             ylim = c(0,1), lwd = 1.2, main = paste("p-values for JB-test up to Lag",up.to),
+             ylab = "p.value",xlab = "Lag")
+        axis(1, seq(1,20,2))
+        grid(lty = 1)
+
+        for (j in seq_len(nrow(p_vals[-1,]))) {
+
+                lines(p_vals[j+1,], type = "b", pch = j+1,
+                      ylim = c(0,1), lwd = 1.2)
+
+        }
+
+        abline(h = .05, lty = 4, lwd = 2, col = "#B58900")
+
+
+        legend("topright", legend = names,
+               pch = c(12, seq(2,nrow(p_vals[-1,]) + 1)),
+               bg = "white",
+               lwd = 1)
+
+        dev.off()
+
 }
 
 

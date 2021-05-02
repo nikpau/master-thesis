@@ -7,9 +7,9 @@ plot_save_forecast <- function(forecast = NULL, testset, window, path, seriesWit
     if (is.null(seriesWithForc)) {
       single_fit <- forecast[[i]]
       
-      series <- tail(forecast[[i]]$x, window)
-      forc <- forecast[[i]]$mean
-      test <- testset[[i]]
+      series <- tail(exp(forecast[[i]]$x), window)
+      forc <- exp(forecast[[i]]$mean)
+      test <- exp(testset[[i]])
       test <- ts(test, start = length(forecast[[i]]$x)+1, 
                  end = length(forecast[[i]]$x) + length(test))
       trans_true <- ts(c(tail(series,1), head(test,1)), 
@@ -18,8 +18,8 @@ plot_save_forecast <- function(forecast = NULL, testset, window, path, seriesWit
       trans_forc <- ts(c(tail(series,1), head(forc,1)), 
                        start = tail(index(series),1),
                        end = head(index(forc),1))
-      ui <- forecast[[i]]$upper[,2]
-      li <- forecast[[i]]$lower[,2]
+      ui <- exp(forecast[[i]]$upper[,2])
+      li <- exp(forecast[[i]]$lower[,2])
       
       length_series <- length(forecast[[i]]$x)
       

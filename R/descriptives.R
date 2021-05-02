@@ -56,36 +56,47 @@ make_Boxplot <- function(list) {
 
 # Create autocorrelation function plots for each time series and save them into the /img folder
 save_ACF <- function(list,n.lag = 30, type = "acf") {
+        
+        op <- par(no.readonly = T)
 
         for (i in seq_len(length(list))) {
 
                 if(type == "acf") {
-                        print(noquote(paste0("Working on ACF for", 
+                        print(noquote(paste0("Working on ACF for ", 
                                              names(diff_list)[i])))
                         index_name <- names(list)[i]
 
                         pdf(file = paste0("./img/ACFs/ACF"," ",
                                           index_name,
-                                          ".pdf"), height = 5)
+                                          ".pdf"), height = 5, family = "Courier")
+                        par(cex.main=2)
                         plot(forecast::Acf(list[[i]],lag.max = n.lag, plot = F), 
                              main = paste("ACF for",index_name,
                                           "(n.lag = ",n.lag,")"), 
-                             ylim = c(-.1,.1), lwd = 2)
+                             ylim = c(-.1,.1), lwd = 4, 
+                             cex = 2, 
+                             cex.axis = 1.2, 
+                             cex.lab = 1.5)
 
                         dev.off()
                 }
                 else if (type  == "pacf") {
-                        print(noquote(paste0("Working on PACF for", 
+                        print(noquote(paste0("Working on PACF for ", 
                                              names(diff_list)[i])))
                         index_name <- names(list)[i]
 
                         pdf(file = paste0("./img/PACFs/PACF"," ",
                                           index_name,
-                                          ".pdf"), height = 5)
+                                          ".pdf"), height = 5, family = "Courier")
+                        par(cex.main=2)
                         plot(forecast::Pacf(list[[i]],lag.max = n.lag, plot = F), 
                              main = paste("PACF for",index_name,
                                           "(n.lag = ",n.lag,")"), 
-                             ylim = c(-.1,.1), lwd = 2)
+                             ylim = c(-.1,.1), 
+                             lwd = 4, 
+                             cex = 2, 
+                             cex.axis = 1.2, 
+                             cex.lab = 1.5)
 
                         dev.off()
                 }
@@ -93,6 +104,7 @@ save_ACF <- function(list,n.lag = 30, type = "acf") {
                         stop("Type can only be one of either 'acf' or 'pacf' ")
                 }
         }
+        par(op)
 
         print(noquote(paste0("Done!")))
 }
@@ -218,8 +230,8 @@ sc_llik <- function(par,data){
 # Returns a data frame with all indices and their respective estimated parameters. 
 
 # Starting values (arbitrary)
-p0_1 <- c(.02,.03,1)
-p0_2 <- c(.02,.03,1,4)
+p0_1 <- c(2, 3, 1)
+p0_2 <- c(2, 3, 1, 4)
 
 # Function
 est_Par <- function(list){
@@ -228,13 +240,13 @@ est_Par <- function(list){
         index_name <- vector()
 
         # Information Criteria result matrices
-        AIC_res <- as.data.frame(matrix(ncol = 3))
+        AICc_res <- as.data.frame(matrix(ncol = 3))
         BIC_res <- as.data.frame(matrix(ncol = 3))
         HQC_res <- as.data.frame(matrix(ncol = 3))
         ic_names <- c("Index","Skew-Normal","Skew-t","Skew-Cauchy")
 
         # Information criteria functions
-        AIC <- function(optim) {2 * optim$value + 2 * length(optim$par)}
+        AICc <- function(optim, ts) {2 * optim$value + 2 * length(optim$par) + ((2*(optim$par)^2 + 2 * optim$par) / (length(ts) - optim$par - 1))}
         BIC <- function(optim,ts) { 2 * optim$value + length(optim$par) * log(length(ts))}
         HQC <- function(optim,ts) {2 * optim$value + 2 * length(optim$par) * log(log(length(ts)))}
 
@@ -269,21 +281,24 @@ est_Par <- function(list){
 
                 # Information Criteria
                 # AIC
-                AIC_res <- rbind(AIC_res, c(AIC(sno), AIC(sto), AIC(sco)))
-                BIC_res <- rbind(BIC_res, c(BIC(sno,list[[i]]), BIC(sto,list[[i]]), BIC(sco, list[[i]])))
-                HQC_res <- rbind(HQC_res, c(HQC(sno,list[[i]]), HQC(sto, list[[i]]), HQC(sco,list[[i]])))
+                AICc_res <- rbind(AICc_res, 
+                                  c(AICc(sno, list[[i]]), AICc(sto, list[[i]]), AICc(sco, list[[i]])))
+                BIC_res <- rbind(BIC_res, 
+                                 c(BIC(sno,list[[i]]), BIC(sto,list[[i]]), BIC(sco, list[[i]])))
+                HQC_res <- rbind(HQC_res, 
+                                 c(HQC(sno,list[[i]]), HQC(sto, list[[i]]), HQC(sco,list[[i]])))
 
 
 
         }
 
         # Bind names vector to the Indices
-        AIC_res <- cbind(index_name,AIC_res[-1, ])
+        AICc_res <- cbind(index_name,AICc_res[-1, ])
         BIC_res <- cbind(index_name,BIC_res[-1, ])
         HQC_res <- cbind(index_name,HQC_res[-1, ])
 
         # Name columns
-        names(AIC_res) <- ic_names
+        names(AICc_res) <- ic_names
         names(BIC_res) <- ic_names
         names(HQC_res) <- ic_names
 
@@ -292,7 +307,7 @@ est_Par <- function(list){
                         "Location (t)","Scale (t)","Skew (t)","df(t)",
                         "Location (Cauchy)","Scale (Cauchy)","Skew (Cauchy)")
         res_list <- list(Estimates = res, 
-                         InformationCriteria = list(AIC = AIC_res,
+                         InformationCriteria = list(AICc = AICc_res,
                                                     BIC = BIC_res,
                                                     HQC = HQC_res))
         res_list

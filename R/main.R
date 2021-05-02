@@ -27,7 +27,8 @@ list_of_packages <- c("moments",
                       "tfestimators",
                       "tfruns",
                       "rsample",
-                      "recipes"
+                      "recipes",
+                      "rugarch"
                       )
 
 # Create a list of all missing packages
@@ -38,13 +39,14 @@ new_packages <- list_of_packages[!(list_of_packages %in%
 if (length(new_packages)) {
         install.packages(new_packages)
 }
+
 # Recursive load of packages
 invisible(
 
           lapply(list_of_packages, library, character.only = T)
 )
 
-#### KERAS INFORMATION ########
+#################### KERAS INFORMATION #########################
 #
 # If you have not yet installed TensorFlow or Keras on your machine
 # you can do so by executing the install_keras() function below.
@@ -55,7 +57,7 @@ invisible(
 
 # Detect the number of cores on your system to enable multi-core processing.
 # Last core is omitted to prevent system freeze during exec.
-mc_cores <- detectCores() - 1
+MC_CORES <- detectCores() - 1
 
 ############ ONLY FOR R-STUDIO USERS ##################
 #
@@ -86,17 +88,18 @@ attach(funcEnv)
 
 # Tidy up
 rm(funcEnv, list_of_packages, script_sources)
+if (exists("new_packages")) rm(new_packages)
 
 ######################################################################
 #                       DESCRIPTIVE STATISTICS
 ######################################################################
 
-# Plot the raw series
+# Plot the raw series || found in "./img/raw_series"
 plot_Raw_Series()
 
-# Plot ACFs and PACFs || can be found in ./img/ACFs
-save_ACF(diff_list, n.lag = 90, type = "acf")
-save_ACF(diff_list, n.lag = 90, type = "pacf")
+# Plot ACFs and PACFs || can be found in "./img/ACFs"
+save_ACF(diff_list, n.lag = 50, type = "acf")
+save_ACF(diff_list, n.lag = 50, type = "pacf")
 
 # Tests for stationarity
 
@@ -249,29 +252,33 @@ train_test_arima <- make_training_and_testing_sets(
 #
 # Fitted object can directly be loaded via 
 # auto_arima_list <- readRDS("./_objects/arima_fit.rds")
+#
 auto_arima_list <- list_Auto_Arima(
 
                                    log_indices, 
                                    crit = "aicc",
                                    parallel = T, 
-                                   n.cores = mc_cores, 
+                                   n.cores = MC_CORES, 
                                    out.sample = OUT_SAMPLE
 
 )
 
-# Ljung-Box test for the arima residuals
+# Split the list in two for plotting two plots with seven indices each
 arima_resid <- lapply(auto_arima_list, residuals)
-arima_ljungBox <- lapply(arima_resid, Box.test, type = "L", lag = 1)
-arima_ljungBox_summary <- data.frame(matrix(ncol = 3, nrow = length(names_complete)))
-arima_ljungBox_summary[,1] <- names_complete
-for (i in seq_len(length(names_complete))) {
-  arima_ljungBox_summary[i,2] <- arima_ljungBox[[i]]$statistic
-  arima_ljungBox_summary[i,3] <- arima_ljungBox[[i]]$p.value
+arima_resid_1_7 <- list()
+arima_resid_8_14 <- list()
+for (i in  seq_len(length(arima_resid) / 2)) {
+  arima_resid_1_7[[i]] <- arima_resid[[i]]
+  arima_resid_8_14[[i]] <- arima_resid[[i + 7]]
 }
-names(arima_ljungBox_summary) <- c("Index", "Test statistic", "p.value")
+
+# Plot Ljung-Box test for the arima_sstd residuals for different lags
+plot_JB_lags(arima_resid_1_7, names = names_complete[1:7], filename = "arima_jb1-7")
+plot_JB_lags(arima_resid_8_14, names = names_complete[8:14], filename = "arima_jb8-14")
+rm(arima_resid_1_7,arima_resid_8_14)
 
 # Extract the orders of the fitted arima models
-arma_orders_aicc <- get_orders_from_arima_fit(auto_arima_list)
+arma_orders <- get_orders_from_arima_fit(auto_arima_list)
 
 # Extract information criteria from the arima fits
 arima_info_crits <- info_crits_arima(auto_arima_list)
@@ -281,7 +288,7 @@ arima_forecast <- mclapply(
 
                            auto_arima_list, forecast, 
                            h = OUT_SAMPLE, 
-                           mc.cores = mc_cores
+                           mc.cores = MC_CORES
 )
 
 # Error metrics 
@@ -309,34 +316,53 @@ plot_save_forecast(
 )
 
 ############################################################
-#                 Arima assuming Skewed student t
+#                 ARIMA assuming Skewed student t
 #############################################################
-cl <- makeCluster(mc_cores)
+cl <- makeCluster(MC_CORES)
 
 # Create training and testing sets
 train_test_arima_std <- make_training_and_testing_sets(diff_list, OUT_SAMPLE)
 
-arima_sstd <- lapply(train_test_arima_std$train, autoarfima, ar.max = 5, ma.max = 5, 
-                     method = "full", distribution.model = "sstd", include.mean = F,
+# For the next function I modified the rugarch package in order to support
+# the AICc as an information criterion. In order to recreate the function 
+# you need to rebuild the package from the modified source in ./R/rugarch_source.
+# On *nix systems open the folder in the terminal and run `R CMD INSTALL rugarch_1.4-4.tar.gz`
+#
+# After completion rerun R and reload the rugarch package and execute the function. 
+
+# Estimate arima orders up to order (12,12) with skew-t as underlying distribution
+# Computationally demanding. Exec time ~20 minutes on 16 cores.
+arima_sstd <- lapply(train_test_arima_std$train, autoarfima, ar.max = 12, ma.max = 12, 
+                     method = "partial", distribution.model = "sstd", include.mean = F,
                      criterion = "BIC", cluster = cl)
+
+# Load the saved fit to skip the leghthy fitting process
+# arima_sstd <- readRDS("./_objects/arima_sstd_fit.rds")
 
 # Extract residuals
 sstd_resid <- lapply(arima_sstd, function(x) return(x$fit@fit$residuals))
 
-# Ljung-Box test for the arima_sstd residuals
-sstd_ljungBox <- lapply(sstd_resid, Box.test, type = "L", lag = 1)
-sstd_ljungBox_summary <- data.frame(matrix(ncol = 3, nrow = length(names_complete)))
-sstd_ljungBox_summary[,1] <- names_complete
-for (i in seq_len(length(names_complete))) {
-  sstd_ljungBox_summary[i,2] <- sstd_ljungBox[[i]]$statistic
-  sstd_ljungBox_summary[i,3] <- sstd_ljungBox[[i]]$p.value
+# Split the list in two for plotting two plots with seven indices each
+sstd_resid_1_7 <- list()
+sstd_resid_8_14 <- list()
+for (i in  seq_len(length(sstd_resid) / 2)) {
+  sstd_resid_1_7[[i]] <- sstd_resid[[i]]
+  sstd_resid_8_14[[i]] <- sstd_resid[[i + 7]]
 }
-names(sstd_ljungBox_summary) <- c("Index", "Test statistic", "p.value")
+
+# Plot Ljung-Box test for the arima_sstd residuals for different lags
+plot_JB_lags(sstd_resid_1_7, names = names_complete[1:7], filename = "arima_sstd_jb1-7")
+plot_JB_lags(sstd_resid_8_14, names = names_complete[8:14], filename = "arima_sstd_jb8-14")
+rm(sstd_resid_1_7,sstd_resid_8_14)
+
 
 # Forecast skew t arima
 arima_sstd_forecast <-lapply(arima_sstd, 
                              function(x) return(arfimaforecast(x[[1]], 
                                                                n.ahead = OUT_SAMPLE)))
+
+# Extract orders for the arima fit
+arma_sstd_orders <- get_orders_rugarch_arima(arima_sstd)
 
 # Extract the forecasts, stitch them back to the series, and un-difference
 sstd_retransformed <- sstd_retransform(arima_sstd_forecast, train_test_arima_std$train, const_int)
@@ -394,8 +420,8 @@ lags_mlp <- c(2,4,7,10,14)
 
 # Create supervised learning problems (split the series into a labeled train 
 # and test set), for all the lags from the lag vector
-nn.gridsearch_1_7 <- lag_list_nn(ts_list_1_7, lags, OUT_SAMPLE)
-nn.gridsearch_8_14 <- lag_list_nn(ts_list_8_14, lags, OUT_SAMPLE)
+nn.gridsearch_1_7 <- lag_list_nn(ts_list_1_7, lags_lstm, OUT_SAMPLE)
+nn.gridsearch_8_14 <- lag_list_nn(ts_list_8_14, lags_lstm, OUT_SAMPLE)
 
 flags.mlp <-  list(dropout = c(.1),
                    dense.units = c(16, 32, 64, 128),

@@ -162,10 +162,10 @@ do_train_lstm <- function(data, flags) {
                 layer_activation_relu(negative_slope = flags$flag_neg.slope) %>%
                 layer_dropout(rate = flags$flag_dropout) %>%
                 layer_lstm(units = flags$flag_lstm.units2, 
-                           return_sequences = F,
+                           return_sequences = T,
                            stateful = F) %>%
                 layer_activation_relu(negative_slope = flags$flag_neg.slope) %>%
-                layer_dense(units = 1)
+                time_distributed(layer_dense(units = 1))
         
         lstm_model %>%
                 compile(
